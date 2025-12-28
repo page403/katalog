@@ -52,56 +52,61 @@ export default function CartPage() {
           <>
             <div className="divide-y">
               {items.map((it, idx) => (
-                <div key={it.id} className="py-4 flex items-center gap-4">
-                  <div className="relative h-16 w-16 bg-white rounded">
-                    <Image
-                      src={it.image || 'https://placehold.co/400'}
-                      alt={it.title}
-                      fill
-                      className="object-cover rounded"
-                      sizes="64px"
-                      unoptimized
-                    />
+                <div key={it.id} className="py-4">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-16 w-16 bg-white rounded">
+                      <Image
+                        src={it.image || 'https://placehold.co/400'}
+                        alt={it.title}
+                        fill
+                        className="object-cover rounded"
+                        sizes="64px"
+                        unoptimized
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold">{it.title}</div>
+                      <div className="text-sm text-gray-600">Rp. {it.price.toLocaleString('id-ID')}</div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="font-semibold">{it.title}</div>
-                    <div className="text-sm text-gray-600">Rp. {it.price.toLocaleString('id-ID')}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
+                  <div className="mt-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        aria-label="Decrease"
+                        className="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
+                        onClick={() => {
+                          const next = [...items];
+                          next[idx] = { ...next[idx], qty: Math.max(1, next[idx].qty - 1) };
+                          save(next);
+                        }}
+                      >
+                        −
+                      </button>
+                      <span className="w-8 text-center">{it.qty}</span>
+                      <button
+                        aria-label="Increase"
+                        className="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
+                        onClick={() => {
+                          const next = [...items];
+                          next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
+                          save(next);
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
                     <button
-                      aria-label="Decrease"
-                      className="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
+                      aria-label="Remove"
+                      className="p-2 rounded border border-red-300 text-red-700 hover:bg-red-50"
                       onClick={() => {
-                        const next = [...items];
-                        next[idx] = { ...next[idx], qty: Math.max(1, next[idx].qty - 1) };
+                        const next = items.filter((_, i) => i !== idx);
                         save(next);
                       }}
+                      title="Remove"
                     >
-                      −
-                    </button>
-                    <span className="w-8 text-center">{it.qty}</span>
-                    <button
-                      aria-label="Increase"
-                      className="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
-                      onClick={() => {
-                        const next = [...items];
-                        next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
-                        save(next);
-                      }}
-                    >
-                      +
+                      🗑️
                     </button>
                   </div>
-                  <button
-                    aria-label="Remove"
-                    className="px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50"
-                    onClick={() => {
-                      const next = items.filter((_, i) => i !== idx);
-                      save(next);
-                    }}
-                  >
-                    Remove
-                  </button>
                 </div>
               ))}
             </div>
@@ -111,10 +116,16 @@ export default function CartPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  className="px-3 py-2 rounded-md border border-gray-200 hover:bg-gray-50"
-                  onClick={() => save([])}
+                  aria-label="Empty cart"
+                  title="Empty cart"
+                  className="p-2 rounded-md bg-red-600 text-white hover:bg-red-700"
+                  onClick={() => {
+                    if (window.confirm('Empty all items from the cart?')) {
+                      save([]);
+                    }
+                  }}
                 >
-                  Empty Cart
+                  🗑️
                 </button>
                 <button className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">
                   Checkout
