@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const dataFilePath = path.join(process.cwd(), 'data', 'products.json');
+import { getProducts, addProduct, updateProduct, deleteProduct } from '@/lib/storage';
 
 export async function GET() {
   try {
-    const fileContents = fs.readFileSync(dataFilePath, 'utf8');
-    const products = JSON.parse(fileContents);
+    const products = await getProducts();
     return NextResponse.json(products);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to load products' }, { status: 500 });
@@ -23,19 +19,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const fileContents = fs.readFileSync(dataFilePath, 'utf8');
-    const products = JSON.parse(fileContents);
-
-    const newProduct = {
-      id: Date.now().toString(),
+    const newProduct = await addProduct({
       title,
       price: parseFloat(price),
       description,
       image,
-    };
-
-    products.push(newProduct);
-    fs.writeFileSync(dataFilePath, JSON.stringify(products, null, 2));
+    });
 
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
@@ -52,25 +41,18 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const fileContents = fs.readFileSync(dataFilePath, 'utf8');
-    let products = JSON.parse(fileContents);
-
-    const index = products.findIndex((p: any) => p.id === id);
-    if (index === -1) {
+    try {
+      const updated = await updateProduct({
+        id,
+        title,
+        price: parseFloat(price),
+        description,
+        image,
+      });
+      return NextResponse.json(updated);
+    } catch {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
-
-    products[index] = {
-      id,
-      title,
-      price: parseFloat(price),
-      description,
-      image,
-    };
-
-    fs.writeFileSync(dataFilePath, JSON.stringify(products, null, 2));
-
-    return NextResponse.json(products[index]);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
   }
@@ -85,17 +67,10 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Missing product ID' }, { status: 400 });
     }
 
-    const fileContents = fs.readFileSync(dataFilePath, 'utf8');
-    let products = JSON.parse(fileContents);
-
-    const initialLength = products.length;
-    products = products.filter((p: any) => p.id !== id);
-
-    if (products.length === initialLength) {
+    const success = await deleteProduct(id);
+    if (!success) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
-
-    fs.writeFileSync(dataFilePath, JSON.stringify(products, null, 2));
 
     return NextResponse.json({ success: true });
   } catch (error) {
