@@ -27,8 +27,9 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(newProduct, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to add product' }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to add product';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -50,11 +51,14 @@ export async function PUT(request: Request) {
         image,
       });
       return NextResponse.json(updated);
-    } catch {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Product not found';
+      const status = msg === 'Product not found' ? 404 : 500;
+      return NextResponse.json({ error: msg }, { status });
     }
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to update product';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -73,7 +77,8 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to delete product';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -26,7 +26,9 @@ export type UpdateProductInput = {
 };
 
 const dataFilePath = path.join(process.cwd(), 'data', 'products.json');
-const useKv = !!process.env.VERCEL;
+const kvReady = !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
+const useKv = !!process.env.VERCEL && kvReady;
+const vercelWithoutKv = !!process.env.VERCEL && !kvReady;
 const KV_KEY = 'products';
 
 async function readFsProducts(): Promise<Product[]> {
@@ -55,6 +57,9 @@ function normalizePrice(price: number | string): number {
 }
 
 export async function addProduct(input: AddProductInput): Promise<Product> {
+  if (vercelWithoutKv) {
+    throw new Error('Storage not configured on Vercel. Set Vercel KV environment variables.');
+  }
   const products = await getProducts();
   const newProduct: Product = {
     id: Date.now().toString(),
@@ -71,6 +76,9 @@ export async function addProduct(input: AddProductInput): Promise<Product> {
 }
 
 export async function updateProduct(input: UpdateProductInput): Promise<Product> {
+  if (vercelWithoutKv) {
+    throw new Error('Storage not configured on Vercel. Set Vercel KV environment variables.');
+  }
   const products = await getProducts();
   const index = products.findIndex((p) => p.id === input.id);
   if (index === -1) {
@@ -91,6 +99,9 @@ export async function updateProduct(input: UpdateProductInput): Promise<Product>
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
+  if (vercelWithoutKv) {
+    throw new Error('Storage not configured on Vercel. Set Vercel KV environment variables.');
+  }
   const products = await getProducts();
   const filtered = products.filter((p) => p.id !== id);
   if (filtered.length === products.length) {
