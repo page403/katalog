@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { Button, Input, Textarea, Select, SelectItem, Chip } from '@heroui/react';
 
 interface Product {
   id: string;
@@ -181,12 +182,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <button 
-          onClick={handleLogout}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-        >
-          Logout
-        </button>
+        <Button color="danger" onClick={handleLogout}>Logout</Button>
       </div>
 
       {/* Form Section */}
@@ -204,84 +200,78 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
         </div>
         
         {message && (
-          <p className={`mb-4 p-3 rounded ${message.includes('success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          <Chip color={message.includes('success') ? 'success' : 'danger'} variant="flat" className="mb-4">
             {message}
-          </p>
+          </Chip>
         )}
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="col-span-1">
-            <label className="block text-gray-700 mb-2">Title</label>
-            <input
-              type="text"
+            <Input
+              label="Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              isRequired
             />
           </div>
           <div className="col-span-1">
-            <label className="block text-gray-700 mb-2">Price</label>
-            <input
+            <Input
               type="number"
+              label="Price"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              isRequired
             />
           </div>
           <div className="col-span-1 md:col-span-2">
-            <label className="block text-gray-700 mb-2">Image URL</label>
-            <input
+            <Input
               type="url"
+              label="Image URL"
               value={image}
               onChange={(e) => setImage(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="https://example.com/image.jpg"
             />
           </div>
           <div className="col-span-1 md:col-span-2">
-            <label className="block text-gray-700 mb-2">Description</label>
-            <textarea
+            <Textarea
+              label="Description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={3}
+              onChange={(e) => setDescription(e.target.value as string)}
+              minRows={3}
             />
           </div>
           <div className="col-span-1">
-            <label className="block text-gray-700 mb-2">Supplier</label>
-            <select
-              value={supplierId}
-              onChange={(e) => setSupplierId(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <Select
+              label="Supplier"
+              selectedKeys={supplierId ? [supplierId] : []}
+              onSelectionChange={(keys) => {
+                const val = Array.from(keys as Set<string>)[0] || '';
+                setSupplierId(val);
+              }}
+              items={suppliers}
+              placeholder="None"
             >
-              <option value="">None</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
+              {(s) => <SelectItem key={s.id}>{s.name}</SelectItem>}
+            </Select>
           </div>
           <div className="col-span-1">
-            <label className="block text-gray-700 mb-2">Tag</label>
-            <select
-              value={tagId}
-              onChange={(e) => setTagId(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <Select
+              label="Tag"
+              selectedKeys={tagId ? [tagId] : []}
+              onSelectionChange={(keys) => {
+                const val = Array.from(keys as Set<string>)[0] || '';
+                setTagId(val);
+              }}
+              items={tags}
+              placeholder="None"
             >
-              <option value="">None</option>
-              {tags.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
+              {(t) => <SelectItem key={t.id}>{t.name}</SelectItem>}
+            </Select>
           </div>
           <div className="col-span-1 md:col-span-2">
-            <button
-              type="submit"
-              className={`w-full text-white py-2 rounded transition-colors ${editingId ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'}`}
-            >
+            <Button color={editingId ? 'warning' : 'success'} className="w-full" type="submit">
               {editingId ? 'Update Product' : 'Add Product'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -292,39 +282,23 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
           <div>
             <label className="block text-gray-700 mb-2">Add Supplier</label>
             <div className="flex gap-2">
-              <input
-                type="text"
+              <Input
                 value={newSupplierName}
-                onChange={(e) => setNewSupplierName(e.target.value)}
-                className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => setNewSupplierName((e.target as HTMLInputElement).value)}
                 placeholder="Supplier name"
               />
-              <button
-                onClick={handleAddSupplier}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                type="button"
-              >
-                Add
-              </button>
+              <Button onClick={handleAddSupplier} color="primary" type="button">Add</Button>
             </div>
           </div>
           <div>
             <label className="block text-gray-700 mb-2">Add Tag</label>
             <div className="flex gap-2">
-              <input
-                type="text"
+              <Input
                 value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
-                className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => setNewTagName((e.target as HTMLInputElement).value)}
                 placeholder="Tag name"
               />
-              <button
-                onClick={handleAddTag}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                type="button"
-              >
-                Add
-              </button>
+              <Button onClick={handleAddTag} color="primary" type="button">Add</Button>
             </div>
           </div>
         </div>
