@@ -16,7 +16,7 @@ export function ProductCard({ product }: { product: Product }) {
           src={product.image || 'https://placehold.co/400'}
           alt={product.title}
           fill
-          className="object-contain"
+          className="object-cover"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           unoptimized
           priority={false}
