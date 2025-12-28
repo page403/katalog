@@ -12,6 +12,7 @@ type Product = {
   status?: 'published' | 'archived';
   categoryId?: string | null;
   tagId?: string | null;
+  tagIds?: string[];
   supplierId?: string | null;
 };
 
@@ -32,6 +33,7 @@ export default function CatalogPage({
   const [query, setQuery] = useState('');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<'relevance' | 'price_asc' | 'price_desc' | 'title_asc'>('relevance');
   const maxPrice = useMemo(() => Math.max(0, ...published.map((p) => p.price)), [published]);
   const [minPrice, setMinPrice] = useState<number>(0);
@@ -94,6 +96,17 @@ export default function CatalogPage({
     return counts;
   }, [published]);
 
+  const tagCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of published) {
+      const ids = p.tagIds && p.tagIds.length ? p.tagIds : (p.tagId ? [p.tagId] : []);
+      for (const id of ids) {
+        counts[id] = (counts[id] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [published]);
+
   const tagMap = useMemo(() => {
     const m: Record<string, string> = {};
     for (const t of tags) m[t.id] = t.name;
@@ -114,6 +127,13 @@ export default function CatalogPage({
       const set = new Set(selectedBrands);
       list = list.filter((p) => (p.supplierId ? set.has(p.supplierId) : false));
     }
+    if (selectedTags.length) {
+      const set = new Set(selectedTags);
+      list = list.filter((p) => {
+        const ids = p.tagIds && p.tagIds.length ? p.tagIds : (p.tagId ? [p.tagId] : []);
+        return ids.some((id) => set.has(id));
+      });
+    }
     list = list.filter((p) => p.price >= minPrice && p.price <= maxPriceFilter);
     switch (sortKey) {
       case 'price_asc':
@@ -130,7 +150,7 @@ export default function CatalogPage({
         break;
     }
     return list;
-  }, [published, query, selectedCats, selectedBrands, minPrice, maxPriceFilter, sortKey]);
+  }, [published, query, selectedCats, selectedBrands, selectedTags, minPrice, maxPriceFilter, sortKey]);
 
   return (
     <div className="min-h-screen">
@@ -151,6 +171,8 @@ export default function CatalogPage({
               className="text-sm px-3 py-1 rounded-md hover:bg-gray-100"
               onClick={() => {
                 setSelectedCats([]);
+                setSelectedBrands([]);
+                setSelectedTags([]);
                 setMinPrice(0);
                 setMaxPriceFilter(maxPrice);
                 setQuery('');
@@ -204,6 +226,30 @@ export default function CatalogPage({
                     <span className="text-gray-400">{brandCounts[s.id] ?? 0}</span>
                   </label>
                 ))}
+              </div>
+            </div>
+            <div>
+              <div className="font-medium mb-2">Tags</div>
+              <div className="space-y-2 max-h-40 overflow-auto pr-2">
+                {tags.map((t) => (
+                  <label key={t.id} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedTags.includes(t.id)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSelectedTags((prev) =>
+                            checked ? [...prev, t.id] : prev.filter((id) => id !== t.id)
+                          );
+                        }}
+                      />
+                      <span>{t.name}</span>
+                    </div>
+                    <span className="text-gray-400">{tagCounts[t.id] ?? 0}</span>
+                  </label>
+                ))}
+                {tags.length === 0 && <div className="text-xs text-gray-500">No tags available</div>}
               </div>
             </div>
             <div>
@@ -276,7 +322,7 @@ export default function CatalogPage({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filtered.map((product) => {
-              const badge = product.tagId ? tagMap[product.tagId] : '';
+              const tagsForProduct = (product.tagIds && product.tagIds.length ? product.tagIds : (product.tagId ? [product.tagId] : [])).map((id) => tagMap[id]).filter(Boolean);
               return (
                 <div key={product.id} className="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                   <div className="relative w-full bg-white aspect-[4/3]">
@@ -290,11 +336,11 @@ export default function CatalogPage({
                       priority={false}
                     />
                     <div className="absolute top-2 left-2 flex gap-2">
-                      {badge && (
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.toLowerCase().includes('new') ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
-                          {badge}
+                      {tagsForProduct.slice(0, 2).map((label) => (
+                        <span key={label} className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-900 text-white">
+                          {label}
                         </span>
-                      )}
+                      ))}
                     </div>
                     <div className="absolute top-2 right-2">
                       {/* removed heart icon */}

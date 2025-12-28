@@ -11,6 +11,7 @@ export interface Product {
   image?: string;
   supplierId?: string | null;
   tagId?: string | null;
+  tagIds?: string[];
   status?: 'published' | 'archived';
   categoryId?: string | null;
   pcsPrice?: number | null;
@@ -23,6 +24,7 @@ export type AddProductInput = {
   image?: string;
   supplierId?: string | null;
   tagId?: string | null;
+  tagIds?: string[];
   categoryId?: string | null;
   pcsPrice?: number | string | null;
 };
@@ -35,6 +37,7 @@ export type UpdateProductInput = {
   image?: string;
   supplierId?: string | null;
   tagId?: string | null;
+  tagIds?: string[];
   categoryId?: string | null;
   pcsPrice?: number | string | null;
 };
@@ -220,15 +223,16 @@ export async function getProducts(): Promise<Product[]> {
       categoryId: r.category_id,
       supplierId: r.supplier_id,
       tagId: r.tag_id,
+      tagIds: r.tag_id ? r.tag_id.split(',').filter(Boolean) : [],
       pcsPrice: r.price_pcs != null ? Number(r.price_pcs) : null,
     }));
   } else if (useKv) {
     const products = await kv.get<Product[]>(KV_KEY);
     const list = Array.isArray(products) ? products : [];
-    return list.map((p) => ({ ...p, status: p.status || 'published', pcsPrice: p.pcsPrice ?? null }));
+    return list.map((p) => ({ ...p, status: p.status || 'published', pcsPrice: p.pcsPrice ?? null, tagIds: p.tagIds ?? (p.tagId ? [p.tagId] : []) }));
   }
   const fsList = await readFsProducts();
-  return fsList.map((p) => ({ ...p, status: p.status || 'published', pcsPrice: p.pcsPrice ?? null }));
+  return fsList.map((p) => ({ ...p, status: p.status || 'published', pcsPrice: p.pcsPrice ?? null, tagIds: p.tagIds ?? (p.tagId ? [p.tagId] : []) }));
 }
 
 function normalizePrice(price: number | string): number {
@@ -247,6 +251,7 @@ export async function addProduct(input: AddProductInput): Promise<Product> {
     image: input.image || 'https://placehold.co/400',
     supplierId: input.supplierId || null,
     tagId: input.tagId || null,
+    tagIds: input.tagIds && input.tagIds.length ? input.tagIds : (input.tagId ? [input.tagId] : []),
     categoryId: input.categoryId || null,
     status: 'published',
     pcsPrice: input.pcsPrice != null ? normalizePrice(input.pcsPrice) : null,
@@ -255,7 +260,7 @@ export async function addProduct(input: AddProductInput): Promise<Product> {
     await ensureTable();
     await sql`
       INSERT INTO products (id, title, price, price_pcs, description, image, supplier_id, tag_id, category_id, status)
-      VALUES (${newProduct.id}, ${newProduct.title}, ${newProduct.price}, ${newProduct.pcsPrice}, ${newProduct.description}, ${newProduct.image}, ${newProduct.supplierId}, ${newProduct.tagId}, ${newProduct.categoryId}, ${newProduct.status})
+      VALUES (${newProduct.id}, ${newProduct.title}, ${newProduct.price}, ${newProduct.pcsPrice}, ${newProduct.description}, ${newProduct.image}, ${newProduct.supplierId}, ${(newProduct.tagIds || []).join(',')}, ${newProduct.categoryId}, ${newProduct.status})
     `;
   } else if (useKv) {
     const products = await getProducts();
@@ -280,6 +285,7 @@ export async function updateProduct(input: UpdateProductInput): Promise<Product>
     image: input.image || 'https://placehold.co/400',
     supplierId: input.supplierId || null,
     tagId: input.tagId || null,
+    tagIds: input.tagIds && input.tagIds.length ? input.tagIds : (input.tagId ? [input.tagId] : []),
     categoryId: input.categoryId || null,
     pcsPrice: input.pcsPrice != null ? normalizePrice(input.pcsPrice) : null,
   };
@@ -293,7 +299,7 @@ export async function updateProduct(input: UpdateProductInput): Promise<Product>
           description = ${updatedProduct.description},
           image = ${updatedProduct.image},
           supplier_id = ${updatedProduct.supplierId},
-          tag_id = ${updatedProduct.tagId},
+          tag_id = ${(updatedProduct.tagIds || []).join(',')},
           category_id = ${updatedProduct.categoryId}
       WHERE id = ${updatedProduct.id}
     `;

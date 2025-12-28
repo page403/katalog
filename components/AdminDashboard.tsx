@@ -14,6 +14,7 @@ interface Product {
   image?: string;
   supplierId?: string | null;
   tagId?: string | null;
+  tagIds?: string[];
   status?: 'published' | 'archived';
   categoryId?: string | null;
 }
@@ -34,6 +35,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
   const [image, setImage] = useState('');
   const [supplierId, setSupplierId] = useState<string | ''>('');
   const [tagId, setTagId] = useState<string | ''>('');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [message, setMessage] = useState('');
   const [suppliers, setSuppliers] = useState<Array<{ id: string; name: string }>>([]);
   const [tags, setTags] = useState<Array<{ id: string; name: string }>>([]);
@@ -71,6 +73,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
     setImage('');
     setSupplierId('');
     setTagId('');
+    setSelectedTagIds([]);
     setCategoryId('');
     setEditingId(null);
     setMessage('');
@@ -85,6 +88,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
     setImage(product.image || '');
     setSupplierId(product.supplierId || '');
     setTagId(product.tagId || '');
+    setSelectedTagIds(product.tagIds || (product.tagId ? [product.tagId] : []));
     setCategoryId(product.categoryId || '');
     setMessage('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -121,6 +125,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
       image,
       supplierId: supplierId || null,
       tagId: tagId || null,
+      tagIds: selectedTagIds,
       categoryId: categoryId || null,
       ...(editingId && { id: editingId }),
     };
@@ -300,17 +305,55 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
             </select>
           </div>
           <div className="col-span-1">
-            <label className="block text-gray-700 mb-2">Tag</label>
-            <select
-              value={tagId}
-              onChange={(e) => setTagId(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">None</option>
-              {tags.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
+            <label className="block text-gray-700 mb-2">Tags</label>
+            <div className="flex gap-2 mb-2">
+              <input
+                value={newTagName}
+                onChange={(e) => setNewTagName((e.target as HTMLInputElement).value)}
+                placeholder="Add or search tag"
+                className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && newTagName.trim()) {
+                    try {
+                      const res = await fetch('/api/tags', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: newTagName.trim() }),
+                      });
+                      if (res.ok) {
+                        const tag = await res.json();
+                        setTags((prev) => {
+                          const exists = prev.find((t) => t.id === tag.id);
+                          return exists ? prev : [...prev, tag];
+                        });
+                        setSelectedTagIds((prev) => Array.from(new Set([...prev, tag.id])));
+                        setNewTagName('');
+                      }
+                    } catch {}
+                  }
+                }}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {tags.map((t) => {
+                const selected = selectedTagIds.includes(t.id);
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={`px-2 py-1 rounded text-sm ring-1 ${selected ? 'bg-blue-600 text-white ring-blue-600' : 'bg-gray-100 text-gray-800 ring-gray-300'}`}
+                    onClick={() =>
+                      setSelectedTagIds((prev) =>
+                        selected ? prev.filter((id) => id !== t.id) : [...prev, t.id]
+                      )
+                    }
+                  >
+                    {t.name}
+                  </button>
+                );
+              })}
+              {tags.length === 0 && <span className="text-xs text-gray-500">No tags available</span>}
+            </div>
           </div>
           <div className="col-span-1">
             <label className="block text-gray-700 mb-2">Category</label>

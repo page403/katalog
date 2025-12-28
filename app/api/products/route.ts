@@ -13,7 +13,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, price, description, image, supplierId, tagId, categoryId, pcsPrice } = body;
+    const { title, price, description, image, supplierId, tagIds, categoryId, pcsPrice } = body;
 
     if (!title || !price) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       description,
       image,
       supplierId,
-      tagId,
+      tagIds: Array.isArray(tagIds) ? tagIds : undefined,
       categoryId,
       pcsPrice: pcsPrice != null && pcsPrice !== '' ? parseFloat(pcsPrice) : null,
     });
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, title, price, description, image, supplierId, tagId, categoryId, pcsPrice } = body;
+    const { id, title, price, description, image, supplierId, tagIds, categoryId, pcsPrice } = body;
 
     if (!id || !title || !price) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -54,7 +54,8 @@ export async function PUT(request: Request) {
         description,
         image,
         supplierId,
-        tagId,
+        tagId: undefined,
+        tagIds: Array.isArray(tagIds) ? tagIds : undefined,
         categoryId,
         pcsPrice: pcsPrice != null && pcsPrice !== '' ? parseFloat(pcsPrice) : null,
       });

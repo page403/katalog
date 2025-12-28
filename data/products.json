@@ -9,7 +9,8 @@
     "tagId": null,
     "categoryId": "1766911555923",
     "status": "published",
-    "pcsPrice": null
+    "pcsPrice": null,
+    "tagIds": []
   },
   {
     "id": "1766891900698",
@@ -18,7 +19,8 @@
     "description": "z",
     "image": "https://placehold.co/400",
     "status": "published",
-    "pcsPrice": null
+    "pcsPrice": null,
+    "tagIds": []
   },
   {
     "id": "1766911600231",
@@ -30,7 +32,8 @@
     "tagId": null,
     "categoryId": "1766911596944",
     "status": "published",
-    "pcsPrice": null
+    "pcsPrice": null,
+    "tagIds": []
   },
   {
     "id": "1766915445233",
@@ -42,7 +45,8 @@
     "tagId": null,
     "categoryId": "1766911555923",
     "status": "published",
-    "pcsPrice": null
+    "pcsPrice": null,
+    "tagIds": []
   },
   {
     "id": "1766921004162",
@@ -54,6 +58,38 @@
     "tagId": null,
     "categoryId": "1766911596944",
     "pcsPrice": 6000,
+    "status": "published",
+    "tagIds": []
+  },
+  {
+    "id": "1766922297552",
+    "title": "haha",
+    "price": 140000,
+    "description": "",
+    "image": "https://placehold.co/400",
+    "supplierId": "1766899996938",
+    "tagId": null,
+    "tagIds": [
+      "1766922365779",
+      "1766922369540"
+    ],
+    "categoryId": "1766911596944",
+    "pcsPrice": 20000,
+    "status": "published"
+  },
+  {
+    "id": "1766922407704",
+    "title": "rizky",
+    "price": 189000,
+    "description": "",
+    "image": "https://placehold.co/400",
+    "supplierId": null,
+    "tagIds": [
+      "1766922369540"
+    ],
+    "categoryId": "1766911596944",
+    "pcsPrice": null,
+    "tagId": null,
     "status": "published"
   }
 ]

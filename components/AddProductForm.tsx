@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AddProductForm() {
@@ -9,8 +9,23 @@ export default function AddProductForm() {
   const [pcsPrice, setPcsPrice] = useState('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
+  const [tags, setTags] = useState<Array<{ id: string; name: string }>>([]);
+  const [newTagName, setNewTagName] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [message, setMessage] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const res = await fetch('/api/tags');
+        if (res.ok) {
+          setTags(await res.json());
+        }
+      } catch {}
+    };
+    loadTags();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +35,7 @@ export default function AddProductForm() {
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, price, pcsPrice, description, image }),
+        body: JSON.stringify({ title, price, pcsPrice, description, image, tagIds: selectedTagIds }),
       });
 
       if (res.ok) {
@@ -29,6 +44,7 @@ export default function AddProductForm() {
         setPrice('');
         setDescription('');
         setImage('');
+        setSelectedTagIds([]);
         router.refresh();
       } else {
         setMessage('Failed to add product');
@@ -100,6 +116,57 @@ export default function AddProductForm() {
             required
             placeholder="https://example.com/image.jpg"
           />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Tags</label>
+          <div className="flex gap-2 mb-2">
+            <input
+              value={newTagName}
+              onChange={(e) => setNewTagName((e.target as HTMLInputElement).value)}
+              placeholder="Add or search tag"
+              className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter' && newTagName.trim()) {
+                  try {
+                    const res = await fetch('/api/tags', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ name: newTagName.trim() }),
+                    });
+                    if (res.ok) {
+                      const tag = await res.json();
+                      setTags((prev) => {
+                        const exists = prev.find((t) => t.id === tag.id);
+                        return exists ? prev : [...prev, tag];
+                      });
+                      setSelectedTagIds((prev) => Array.from(new Set([...prev, tag.id])));
+                      setNewTagName('');
+                    }
+                  } catch {}
+                }
+              }}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {tags.map((t) => {
+              const selected = selectedTagIds.includes(t.id);
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={`px-2 py-1 rounded text-sm ring-1 ${selected ? 'bg-blue-600 text-white ring-blue-600' : 'bg-gray-100 text-gray-800 ring-gray-300'}`}
+                  onClick={() =>
+                    setSelectedTagIds((prev) =>
+                      selected ? prev.filter((id) => id !== t.id) : [...prev, t.id]
+                    )
+                  }
+                >
+                  {t.name}
+                </button>
+              );
+            })}
+            {tags.length === 0 && <span className="text-xs text-gray-500">No tags available</span>}
+          </div>
         </div>
         <div className="mb-6">
           <label className="block text-gray-700 mb-2">Description</label>
