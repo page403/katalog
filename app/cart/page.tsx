@@ -48,9 +48,9 @@ export default function CartPage() {
     const lines = items.map((it) => {
       const unitPrice = it.unit === 'PCS' && it.pcsPrice != null ? it.pcsPrice : it.price;
       const subtotal = unitPrice * it.qty;
-      return `${it.title} | Qty: ${it.qty} ${it.unit || 'CTN'} @ Rp ${unitPrice.toLocaleString('id-ID')} = Rp ${subtotal.toLocaleString('id-ID')}`;
+      return `- ${it.title} ${it.qty} ${it.unit || 'CTN'}`;
     });
-    const header = `Order for Wahid:\n`;
+    const header = `Order:\n`;
     const footer = `\nTotal: Rp ${total.toLocaleString('id-ID')}`;
     return header + lines.join('\n') + footer;
   };
