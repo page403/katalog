@@ -11,6 +11,7 @@ interface Product {
   image?: string;
   supplierId?: string | null;
   tagId?: string | null;
+  status?: 'published' | 'archived';
 }
 
 interface AdminDashboardProps {
@@ -338,6 +339,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -349,6 +351,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.title}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rp. {product.price.toLocaleString('id-ID')}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.status === 'archived' ? 'Archived' : 'Published'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button 
                       onClick={() => handleEditClick(product)}
@@ -356,6 +359,51 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
                     >
                       Edit
                     </button>
+                    {product.status === 'archived' ? (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch('/api/products/toggle', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ id: product.id, status: 'published' }),
+                            });
+                            if (res.ok) {
+                              const updated = await res.json();
+                              setProducts(products.map(p => p.id === product.id ? updated : p));
+                              router.refresh();
+                            } else {
+                              alert('Failed to publish product');
+                            }
+                          } catch {}
+                        }}
+                        className="text-green-600 hover:text-green-900 mr-4"
+                      >
+                        Publish
+                      </button>
+                    ) : (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch('/api/products/toggle', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ id: product.id, status: 'archived' }),
+                            });
+                            if (res.ok) {
+                              const updated = await res.json();
+                              setProducts(products.map(p => p.id === product.id ? updated : p));
+                              router.refresh();
+                            } else {
+                              alert('Failed to archive product');
+                            }
+                          } catch {}
+                        }}
+                        className="text-yellow-600 hover:text-yellow-900 mr-4"
+                      >
+                        Archive
+                      </button>
+                    )}
                     <button 
                       onClick={() => handleDeleteClick(product.id)}
                       className="text-red-600 hover:text-red-900"

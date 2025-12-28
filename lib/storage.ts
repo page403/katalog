@@ -11,6 +11,7 @@ export interface Product {
   image?: string;
   supplierId?: string | null;
   tagId?: string | null;
+  status?: 'published' | 'archived';
 }
 
 export type AddProductInput = {
@@ -105,7 +106,8 @@ async function ensureTable() {
       description TEXT,
       image TEXT,
       supplier_id TEXT,
-      tag_id TEXT
+      tag_id TEXT,
+      status TEXT DEFAULT 'published'
     )
   `;
   await sql`
@@ -128,26 +130,33 @@ async function ensureTable() {
     ALTER TABLE products
     ADD COLUMN IF NOT EXISTS tag_id TEXT
   `;
+  await sql`
+    ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'published'
+  `;
 }
 
 export async function getProducts(): Promise<Product[]> {
   if (useDb && sql) {
     await ensureTable();
-    type DbProductRow = { id: string; title: string; price: number | string; description: string; image: string };
+    type DbProductRow = { id: string; title: string; price: number | string; description: string; image: string; status: 'published' | 'archived' | null };
     const rows = await sql`
-      SELECT id, title, price, description, image
+      SELECT id, title, price, description, image, status
       FROM products
       ORDER BY title
     ` as unknown as DbProductRow[];
     return rows.map((r) => ({
       ...r,
       price: Number(r.price),
+      status: (r.status || 'published') as 'published' | 'archived',
     }));
   } else if (useKv) {
     const products = await kv.get<Product[]>(KV_KEY);
-    return Array.isArray(products) ? products : [];
+    const list = Array.isArray(products) ? products : [];
+    return list.map((p) => ({ ...p, status: p.status || 'published' }));
   }
-  return readFsProducts();
+  const fsList = await readFsProducts();
+  return fsList.map((p) => ({ ...p, status: p.status || 'published' }));
 }
 
 function normalizePrice(price: number | string): number {
@@ -166,12 +175,13 @@ export async function addProduct(input: AddProductInput): Promise<Product> {
     image: input.image || 'https://placehold.co/400',
     supplierId: input.supplierId || null,
     tagId: input.tagId || null,
+    status: 'published',
   };
   if (useDb && sql) {
     await ensureTable();
     await sql`
-      INSERT INTO products (id, title, price, description, image, supplier_id, tag_id)
-      VALUES (${newProduct.id}, ${newProduct.title}, ${newProduct.price}, ${newProduct.description}, ${newProduct.image}, ${newProduct.supplierId}, ${newProduct.tagId})
+      INSERT INTO products (id, title, price, description, image, supplier_id, tag_id, status)
+      VALUES (${newProduct.id}, ${newProduct.title}, ${newProduct.price}, ${newProduct.description}, ${newProduct.image}, ${newProduct.supplierId}, ${newProduct.tagId}, ${newProduct.status})
     `;
   } else if (useKv) {
     const products = await getProducts();
@@ -255,6 +265,44 @@ export async function deleteProduct(id: string): Promise<boolean> {
     if (filtered.length === products.length) return false;
     await writeFsProducts(filtered);
     return true;
+  }
+}
+
+export async function setProductStatus(id: string, status: 'published' | 'archived'): Promise<Product | null> {
+  if (vercelWithoutStorage) {
+    throw new Error('Storage not configured on Vercel. Set Neon Postgres or Vercel KV environment variables.');
+  }
+  if (useDb && sql) {
+    await ensureTable();
+    await sql`
+      UPDATE products
+      SET status = ${status}
+      WHERE id = ${id}
+    `;
+    const rows = await sql`
+      SELECT id, title, price, description, image, status, supplier_id as "supplierId", tag_id as "tagId"
+      FROM products
+      WHERE id = ${id}
+    ` as unknown as Array<Product & { price: number | string }>;
+    if (!rows.length) return null;
+    const r = rows[0];
+    return { ...r, price: Number(r.price), status: (r.status || 'published') as 'published' | 'archived' };
+  } else if (useKv) {
+    const products = await getProducts();
+    const index = products.findIndex((p) => p.id === id);
+    if (index === -1) return null;
+    const updated = [...products];
+    updated[index] = { ...updated[index], status };
+    await kv.set(KV_KEY, updated);
+    return updated[index];
+  } else {
+    const products = await getProducts();
+    const index = products.findIndex((p) => p.id === id);
+    if (index === -1) return null;
+    const updated = [...products];
+    updated[index] = { ...updated[index], status };
+    await writeFsProducts(updated);
+    return updated[index];
   }
 }
 

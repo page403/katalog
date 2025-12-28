@@ -23,9 +23,9 @@ export default async function Home() {
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
+        {products.filter(p => p.status !== 'archived').map((product) => (
           <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
-            <div className="bg-white">
+            <div className="bg-gray-200">
               <img 
                 src={product.image} 
                 alt={product.title} 
