@@ -14,6 +14,7 @@ interface Product {
   supplierId?: string | null;
   tagId?: string | null;
   status?: 'published' | 'archived';
+  categoryId?: string | null;
 }
 
 interface AdminDashboardProps {
@@ -34,20 +35,26 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
   const [message, setMessage] = useState('');
   const [suppliers, setSuppliers] = useState<Array<{ id: string; name: string }>>([]);
   const [tags, setTags] = useState<Array<{ id: string; name: string }>>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [newSupplierName, setNewSupplierName] = useState('');
   const [newTagName, setNewTagName] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [categoryId, setCategoryId] = useState<string | ''>('');
   
   const router = useRouter();
 
   useEffect(() => {
     const loadMeta = async () => {
       try {
-        const [sRes, tRes] = await Promise.all([fetch('/api/suppliers'), fetch('/api/tags')]);
+        const [sRes, tRes, cRes] = await Promise.all([fetch('/api/suppliers'), fetch('/api/tags'), fetch('/api/categories')]);
         if (sRes.ok) {
           setSuppliers(await sRes.json());
         }
         if (tRes.ok) {
           setTags(await tRes.json());
+        }
+        if (cRes.ok) {
+          setCategories(await cRes.json());
         }
       } catch {}
     };
@@ -61,6 +68,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
     setImage('');
     setSupplierId('');
     setTagId('');
+    setCategoryId('');
     setEditingId(null);
     setMessage('');
   };
@@ -73,6 +81,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
     setImage(product.image || '');
     setSupplierId(product.supplierId || '');
     setTagId(product.tagId || '');
+    setCategoryId(product.categoryId || '');
     setMessage('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -107,6 +116,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
       image,
       supplierId: supplierId || null,
       tagId: tagId || null,
+      categoryId: categoryId || null,
       ...(editingId && { id: editingId }),
     };
 
@@ -168,6 +178,22 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
         const tag = await res.json();
         setTags([...tags, tag]);
         setNewTagName('');
+      }
+    } catch {}
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCategoryName.trim() }),
+      });
+      if (res.ok) {
+        const cat = await res.json();
+        setCategories([...categories, cat]);
+        setNewCategoryName('');
       }
     } catch {}
   };
@@ -268,6 +294,20 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
               {(t) => <SelectItem key={t.id}>{t.name}</SelectItem>}
             </Select>
           </div>
+          <div className="col-span-1">
+            <Select
+              label="Category"
+              selectedKeys={categoryId ? [categoryId] : []}
+              onSelectionChange={(keys) => {
+                const val = Array.from(keys as Set<string>)[0] || '';
+                setCategoryId(val);
+              }}
+              items={categories}
+              placeholder="None"
+            >
+              {(c) => <SelectItem key={c.id}>{c.name}</SelectItem>}
+            </Select>
+          </div>
           <div className="col-span-1 md:col-span-2">
             <Button color={editingId ? 'warning' : 'success'} className="w-full" type="submit">
               {editingId ? 'Update Product' : 'Add Product'}
@@ -277,8 +317,8 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-10">
-        <h2 className="text-xl font-bold mb-4">Manage Suppliers and Tags</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <h2 className="text-xl font-bold mb-4">Manage Suppliers, Tags, Categories</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-gray-700 mb-2">Add Supplier</label>
             <div className="flex gap-2">
@@ -299,6 +339,17 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
                 placeholder="Tag name"
               />
               <Button onClick={handleAddTag} color="primary" type="button">Add</Button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-gray-700 mb-2">Add Category</label>
+            <div className="flex gap-2">
+              <Input
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName((e.target as HTMLInputElement).value)}
+                placeholder="Category name"
+              />
+              <Button onClick={handleAddCategory} color="primary" type="button">Add</Button>
             </div>
           </div>
         </div>

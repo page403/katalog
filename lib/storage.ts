@@ -12,6 +12,7 @@ export interface Product {
   supplierId?: string | null;
   tagId?: string | null;
   status?: 'published' | 'archived';
+  categoryId?: string | null;
 }
 
 export type AddProductInput = {
@@ -21,6 +22,7 @@ export type AddProductInput = {
   image?: string;
   supplierId?: string | null;
   tagId?: string | null;
+  categoryId?: string | null;
 };
 
 export type UpdateProductInput = {
@@ -31,11 +33,13 @@ export type UpdateProductInput = {
   image?: string;
   supplierId?: string | null;
   tagId?: string | null;
+  categoryId?: string | null;
 };
 
 const dataFilePath = path.join(process.cwd(), 'data', 'products.json');
 const suppliersFilePath = path.join(process.cwd(), 'data', 'suppliers.json');
 const tagsFilePath = path.join(process.cwd(), 'data', 'tags.json');
+const categoriesFilePath = path.join(process.cwd(), 'data', 'categories.json');
 const kvReady = !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
 const dbUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 const dbReady = !!dbUrl;
@@ -46,6 +50,7 @@ const vercelWithoutStorage = !!process.env.VERCEL && !dbReady && !kvReady;
 const KV_KEY = 'products';
 const KV_SUPPLIERS_KEY = 'suppliers';
 const KV_TAGS_KEY = 'tags';
+const KV_CATEGORIES_KEY = 'categories';
 
 async function readFsProducts(): Promise<Product[]> {
   try {
@@ -66,6 +71,11 @@ export interface Supplier {
 }
 
 export interface Tag {
+  id: string;
+  name: string;
+}
+
+export interface Category {
   id: string;
   name: string;
 }
@@ -96,6 +106,19 @@ async function writeFsTags(tags: Tag[]) {
   fs.writeFileSync(tagsFilePath, JSON.stringify(tags, null, 2));
 }
 
+async function readFsCategories(): Promise<Category[]> {
+  try {
+    const fileContents = fs.readFileSync(categoriesFilePath, 'utf8');
+    return JSON.parse(fileContents);
+  } catch {
+    return [];
+  }
+}
+
+async function writeFsCategories(categories: Category[]) {
+  fs.writeFileSync(categoriesFilePath, JSON.stringify(categories, null, 2));
+}
+
 async function ensureTable() {
   if (!useDb || !sql) return;
   await sql`
@@ -123,6 +146,12 @@ async function ensureTable() {
     )
   `;
   await sql`
+    CREATE TABLE IF NOT EXISTS categories (
+      id TEXT PRIMARY KEY,
+      name TEXT UNIQUE NOT NULL
+    )
+  `;
+  await sql`
     ALTER TABLE products
     ADD COLUMN IF NOT EXISTS supplier_id TEXT
   `;
@@ -134,14 +163,18 @@ async function ensureTable() {
     ALTER TABLE products
     ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'published'
   `;
+  await sql`
+    ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS category_id TEXT
+  `;
 }
 
 export async function getProducts(): Promise<Product[]> {
   if (useDb && sql) {
     await ensureTable();
-    type DbProductRow = { id: string; title: string; price: number | string; description: string; image: string; status: 'published' | 'archived' | null };
+    type DbProductRow = { id: string; title: string; price: number | string; description: string; image: string; status: 'published' | 'archived' | null; category_id: string | null; supplier_id: string | null; tag_id: string | null };
     const rows = await sql`
-      SELECT id, title, price, description, image, status
+      SELECT id, title, price, description, image, status, category_id, supplier_id, tag_id
       FROM products
       ORDER BY title
     ` as unknown as DbProductRow[];
@@ -149,6 +182,9 @@ export async function getProducts(): Promise<Product[]> {
       ...r,
       price: Number(r.price),
       status: (r.status || 'published') as 'published' | 'archived',
+      categoryId: r.category_id,
+      supplierId: r.supplier_id,
+      tagId: r.tag_id,
     }));
   } else if (useKv) {
     const products = await kv.get<Product[]>(KV_KEY);
@@ -175,13 +211,14 @@ export async function addProduct(input: AddProductInput): Promise<Product> {
     image: input.image || 'https://placehold.co/400',
     supplierId: input.supplierId || null,
     tagId: input.tagId || null,
+    categoryId: input.categoryId || null,
     status: 'published',
   };
   if (useDb && sql) {
     await ensureTable();
     await sql`
-      INSERT INTO products (id, title, price, description, image, supplier_id, tag_id, status)
-      VALUES (${newProduct.id}, ${newProduct.title}, ${newProduct.price}, ${newProduct.description}, ${newProduct.image}, ${newProduct.supplierId}, ${newProduct.tagId}, ${newProduct.status})
+      INSERT INTO products (id, title, price, description, image, supplier_id, tag_id, category_id, status)
+      VALUES (${newProduct.id}, ${newProduct.title}, ${newProduct.price}, ${newProduct.description}, ${newProduct.image}, ${newProduct.supplierId}, ${newProduct.tagId}, ${newProduct.categoryId}, ${newProduct.status})
     `;
   } else if (useKv) {
     const products = await getProducts();
@@ -206,6 +243,7 @@ export async function updateProduct(input: UpdateProductInput): Promise<Product>
     image: input.image || 'https://placehold.co/400',
     supplierId: input.supplierId || null,
     tagId: input.tagId || null,
+    categoryId: input.categoryId || null,
   };
   if (useDb && sql) {
     await ensureTable();
@@ -216,7 +254,8 @@ export async function updateProduct(input: UpdateProductInput): Promise<Product>
           description = ${updatedProduct.description},
           image = ${updatedProduct.image},
           supplier_id = ${updatedProduct.supplierId},
-          tag_id = ${updatedProduct.tagId}
+          tag_id = ${updatedProduct.tagId},
+          category_id = ${updatedProduct.categoryId}
       WHERE id = ${updatedProduct.id}
     `;
     // Neon returns void for UPDATE via serverless driver; we trust the operation
@@ -385,5 +424,46 @@ export async function addTag(name: string): Promise<Tag> {
     const updated = exists ? list : [...list, tag];
     await writeFsTags(updated);
     return tag;
+  }
+}
+
+export async function getCategories(): Promise<Category[]> {
+  if (useDb && sql) {
+    await ensureTable();
+    const rows = await sql`
+      SELECT id, name FROM categories ORDER BY name
+    ` as unknown as Category[];
+    return rows;
+  } else if (useKv) {
+    const cats = await kv.get<Category[]>(KV_CATEGORIES_KEY);
+    return Array.isArray(cats) ? cats : [];
+  }
+  return readFsCategories();
+}
+
+export async function addCategory(name: string): Promise<Category> {
+  if (vercelWithoutStorage) {
+    throw new Error('Storage not configured on Vercel. Set Neon Postgres or Vercel KV environment variables.');
+  }
+  const cat: Category = { id: Date.now().toString(), name };
+  if (useDb && sql) {
+    await ensureTable();
+    await sql`
+      INSERT INTO categories (id, name) VALUES (${cat.id}, ${cat.name})
+      ON CONFLICT (name) DO NOTHING
+    `;
+    return cat;
+  } else if (useKv) {
+    const list = await getCategories();
+    const exists = list.find((c) => c.name.toLowerCase() === name.toLowerCase());
+    const updated = exists ? list : [...list, cat];
+    await kv.set(KV_CATEGORIES_KEY, updated);
+    return cat;
+  } else {
+    const list = await getCategories();
+    const exists = list.find((c) => c.name.toLowerCase() === name.toLowerCase());
+    const updated = exists ? list : [...list, cat];
+    await writeFsCategories(updated);
+    return cat;
   }
 }
