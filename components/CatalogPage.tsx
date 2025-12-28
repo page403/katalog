@@ -95,35 +95,13 @@ export default function CatalogPage({
 
   return (
     <div className="min-h-screen">
-      <header className="flex items-center justify-between py-4">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-black text-white grid place-items-center font-bold">E</div>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-gray-700">
-            <a href="#" className="hover:text-black">Home</a>
-            <a href="#" className="hover:text-black">Categories</a>
-            <a href="#" className="hover:text-black">Deals</a>
-            <a href="#" className="hover:text-black">About</a>
-          </nav>
-        </div>
-        <div className="flex items-center gap-3 w-full md:w-2/5">
-          <div className="relative w-full">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-            <input
-              aria-label="Search products"
-              placeholder="Search products..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black/20"
-            />
-          </div>
-        </div>
+      <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-end py-1 px-4 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
         <div className="hidden md:flex items-center gap-3">
-          <button className="p-2 rounded-md hover:bg-gray-100">❤️</button>
           <button className="p-2 rounded-md hover:bg-gray-100">🛒</button>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 mt-4">
+      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 mt-16">
         <aside className="bg-white rounded-xl p-4 ring-1 ring-gray-200">
           <div className="flex items-center justify-between mb-3">
             <span className="font-semibold">Filters</span>
@@ -228,7 +206,17 @@ export default function CatalogPage({
 
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative w-48 md:w-64">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                <input
+                  aria-label="Search products"
+                  placeholder="Search products..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black/20"
+                />
+              </div>
               <button className="p-2 rounded-md border border-gray-200 hover:bg-gray-50">🗂️</button>
               <select
                 value={sortKey}
@@ -267,7 +255,7 @@ export default function CatalogPage({
                       )}
                     </div>
                     <div className="absolute top-2 right-2">
-                      <button className="p-2 rounded-full bg-white/80 hover:bg-white">♡</button>
+                      {/* removed heart icon */}
                     </div>
                   </div>
                   <div className="p-4">
@@ -292,6 +280,13 @@ export default function CatalogPage({
           </div>
         </section>
       </div>
+      <button
+        aria-label="Back to top"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-4 right-4 p-3 rounded-full bg-gray-800 text-white shadow hover:bg-gray-900"
+      >
+        ↑
+      </button>
     </div>
   );
 }
