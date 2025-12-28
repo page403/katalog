@@ -348,12 +348,13 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
               {products.map((product) => (
                 <tr key={product.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="relative h-10 w-10">
+                    <div className="relative h-10 w-10 bg-white rounded-full">
                       <Image
                         src={product.image || 'https://placehold.co/400'}
                         alt={product.title}
                         fill
                         className="object-contain rounded-full bg-gray-50"
+                        unoptimized
                         sizes="40px"
                       />
                     </div>
