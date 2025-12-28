@@ -2,11 +2,11 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { getProducts } from '@/lib/storage';
 import CatalogPage from '@/components/CatalogPage';
-import { getCategories, getTags } from '@/lib/storage';
+import { getCategories, getTags, getSuppliers } from '@/lib/storage';
 
 export default async function Home() {
   const products = await getProducts();
-  const [categories, tags] = await Promise.all([getCategories(), getTags()]);
+  const [categories, tags, suppliers] = await Promise.all([getCategories(), getTags(), getSuppliers()]);
   const cookieStore = await cookies();
   const isLoggedIn = cookieStore.get('auth')?.value === 'true';
 
@@ -23,7 +23,7 @@ export default async function Home() {
           </Link>
         )}
       </div>
-      <CatalogPage products={products} categories={categories} tags={tags} />
+      <CatalogPage products={products} categories={categories} tags={tags} suppliers={suppliers} />
     </div>
   );
 }

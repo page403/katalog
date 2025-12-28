@@ -10,6 +10,7 @@ type Product = {
   status?: 'published' | 'archived';
   categoryId?: string | null;
   tagId?: string | null;
+  supplierId?: string | null;
 };
 
 type MetaItem = { id: string; name: string };
@@ -18,14 +19,17 @@ export default function CatalogPage({
   products,
   categories,
   tags,
+  suppliers,
 }: {
   products: Product[];
   categories: MetaItem[];
   tags: MetaItem[];
+  suppliers: MetaItem[];
 }) {
   const published = products.filter((p) => p.status !== 'archived');
   const [query, setQuery] = useState('');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<'relevance' | 'price_asc' | 'price_desc' | 'title_asc'>('relevance');
   const maxPrice = useMemo(() => Math.max(0, ...published.map((p) => p.price)), [published]);
   const [minPrice, setMinPrice] = useState<number>(0);
@@ -35,6 +39,16 @@ export default function CatalogPage({
     const counts: Record<string, number> = {};
     for (const p of published) {
       const id = p.categoryId || '';
+      if (!id) continue;
+      counts[id] = (counts[id] || 0) + 1;
+    }
+    return counts;
+  }, [published]);
+
+  const brandCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of published) {
+      const id = p.supplierId || '';
       if (!id) continue;
       counts[id] = (counts[id] || 0) + 1;
     }
@@ -57,6 +71,10 @@ export default function CatalogPage({
       const set = new Set(selectedCats);
       list = list.filter((p) => (p.categoryId ? set.has(p.categoryId) : false));
     }
+    if (selectedBrands.length) {
+      const set = new Set(selectedBrands);
+      list = list.filter((p) => (p.supplierId ? set.has(p.supplierId) : false));
+    }
     list = list.filter((p) => p.price >= minPrice && p.price <= maxPriceFilter);
     switch (sortKey) {
       case 'price_asc':
@@ -73,7 +91,7 @@ export default function CatalogPage({
         break;
     }
     return list;
-  }, [published, query, selectedCats, minPrice, maxPriceFilter, sortKey]);
+  }, [published, query, selectedCats, selectedBrands, minPrice, maxPriceFilter, sortKey]);
 
   return (
     <div className="min-h-screen">
@@ -141,6 +159,29 @@ export default function CatalogPage({
                       <span>{c.name}</span>
                     </div>
                     <span className="text-gray-400">{catCounts[c.id] ?? 0}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="font-medium mb-2">Brand</div>
+              <div className="space-y-2">
+                {suppliers.map((s) => (
+                  <label key={s.id} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedBrands.includes(s.id)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSelectedBrands((prev) =>
+                            checked ? [...prev, s.id] : prev.filter((id) => id !== s.id)
+                          );
+                        }}
+                      />
+                      <span>{s.name}</span>
+                    </div>
+                    <span className="text-gray-400">{brandCounts[s.id] ?? 0}</span>
                   </label>
                 ))}
               </div>
