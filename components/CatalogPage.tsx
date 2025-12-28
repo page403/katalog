@@ -1,21 +1,5 @@
 'use client';
-
 import { useMemo, useState } from 'react';
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  Button,
-  Input,
-  CheckboxGroup,
-  Checkbox,
-  Slider,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Chip,
-} from '@heroui/react';
 import Image from 'next/image';
 
 type Product = {
@@ -43,8 +27,9 @@ export default function CatalogPage({
   const [query, setQuery] = useState('');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<'relevance' | 'price_asc' | 'price_desc' | 'title_asc'>('relevance');
-  const [maxPrice] = useState<number>(() => Math.max(0, ...published.map((p) => p.price)));
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, Math.max(0, ...published.map((p) => p.price))]);
+  const maxPrice = useMemo(() => Math.max(0, ...published.map((p) => p.price)), [published]);
+  const [minPrice, setMinPrice] = useState<number>(0);
+  const [maxPriceFilter, setMaxPriceFilter] = useState<number>(maxPrice);
 
   const catCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -72,7 +57,7 @@ export default function CatalogPage({
       const set = new Set(selectedCats);
       list = list.filter((p) => (p.categoryId ? set.has(p.categoryId) : false));
     }
-    list = list.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
+    list = list.filter((p) => p.price >= minPrice && p.price <= maxPriceFilter);
     switch (sortKey) {
       case 'price_asc':
         list.sort((a, b) => a.price - b.price);
@@ -88,7 +73,7 @@ export default function CatalogPage({
         break;
     }
     return list;
-  }, [published, query, selectedCats, priceRange, sortKey]);
+  }, [published, query, selectedCats, minPrice, maxPriceFilter, sortKey]);
 
   return (
     <div className="min-h-screen">
@@ -103,17 +88,20 @@ export default function CatalogPage({
           </nav>
         </div>
         <div className="flex items-center gap-3 w-full md:w-2/5">
-          <Input
-            aria-label="Search products"
-            placeholder="Search products..."
-            value={query}
-            onChange={(e) => setQuery((e.target as HTMLInputElement).value)}
-            startContent={<span className="text-gray-500">🔍</span>}
-          />
+          <div className="relative w-full">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <input
+              aria-label="Search products"
+              placeholder="Search products..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black/20"
+            />
+          </div>
         </div>
         <div className="hidden md:flex items-center gap-3">
-          <Button isIconOnly variant="light">❤️</Button>
-          <Button isIconOnly variant="light">🛒</Button>
+          <button className="p-2 rounded-md hover:bg-gray-100">❤️</button>
+          <button className="p-2 rounded-md hover:bg-gray-100">🛒</button>
         </div>
       </header>
 
@@ -121,42 +109,69 @@ export default function CatalogPage({
         <aside className="bg-white rounded-xl p-4 ring-1 ring-gray-200">
           <div className="flex items-center justify-between mb-3">
             <span className="font-semibold">Filters</span>
-            <Button size="sm" variant="light" onClick={() => { setSelectedCats([]); setPriceRange([0, maxPrice]); setQuery(''); }}>
+            <button
+              className="text-sm px-3 py-1 rounded-md hover:bg-gray-100"
+              onClick={() => {
+                setSelectedCats([]);
+                setMinPrice(0);
+                setMaxPriceFilter(maxPrice);
+                setQuery('');
+              }}
+            >
               Reset
-            </Button>
+            </button>
           </div>
           <div className="space-y-6">
             <div>
               <div className="font-medium mb-2">Categories</div>
-              <CheckboxGroup
-                value={selectedCats}
-                onValueChange={(vals) => setSelectedCats(vals as string[])}
-              >
+              <div className="space-y-2">
                 {categories.map((c) => (
-                  <Checkbox key={c.id} value={c.id}>
-                    <span className="flex justify-between w-full">
+                  <label key={c.id} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedCats.includes(c.id)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSelectedCats((prev) =>
+                            checked ? [...prev, c.id] : prev.filter((id) => id !== c.id)
+                          );
+                        }}
+                      />
                       <span>{c.name}</span>
-                      <span className="text-gray-400">{catCounts[c.id] ?? 0}</span>
-                    </span>
-                  </Checkbox>
+                    </div>
+                    <span className="text-gray-400">{catCounts[c.id] ?? 0}</span>
+                  </label>
                 ))}
-              </CheckboxGroup>
+              </div>
             </div>
             <div>
               <div className="font-medium mb-2">Price Range</div>
-              <Slider
-                value={priceRange}
-                onChange={(val) => setPriceRange(val as [number, number])}
-                minValue={0}
-                maxValue={maxPrice}
-                step={1}
-                showSteps={false}
-                className="max-w-full"
-                aria-label="Price range"
-              />
-              <div className="flex justify-between text-sm text-gray-500 mt-1">
-                <span>Rp. {priceRange[0].toLocaleString('id-ID')}</span>
-                <span>Rp. {priceRange[1].toLocaleString('id-ID')}</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-20 text-sm text-gray-600">Min</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={maxPrice}
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(Number(e.target.value))}
+                    className="w-full"
+                  />
+                  <span className="text-sm text-gray-600">Rp. {minPrice.toLocaleString('id-ID')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-20 text-sm text-gray-600">Max</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={maxPrice}
+                    value={maxPriceFilter}
+                    onChange={(e) => setMaxPriceFilter(Number(e.target.value))}
+                    className="w-full"
+                  />
+                  <span className="text-sm text-gray-600">Rp. {maxPriceFilter.toLocaleString('id-ID')}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -165,26 +180,17 @@ export default function CatalogPage({
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button isIconOnly variant="flat">🗂️</Button>
-              <Dropdown>
-                <DropdownTrigger>
-                  <Button endContent={<span>▾</span>} variant="flat">
-                    Sort: {sortKey === 'relevance' ? 'Relevance' : sortKey === 'price_asc' ? 'Price: Low to High' : sortKey === 'price_desc' ? 'Price: High to Low' : 'Title: A-Z'}
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu
-                  selectionMode="single"
-                  onSelectionChange={(keys) => {
-                    const key = Array.from(keys as Set<string>)[0] as typeof sortKey;
-                    setSortKey(key);
-                  }}
-                >
-                  <DropdownItem key="relevance">Relevance</DropdownItem>
-                  <DropdownItem key="price_asc">Price: Low to High</DropdownItem>
-                  <DropdownItem key="price_desc">Price: High to Low</DropdownItem>
-                  <DropdownItem key="title_asc">Title: A-Z</DropdownItem>
-                </DropdownMenu>
-              </Dropdown>
+              <button className="p-2 rounded-md border border-gray-200 hover:bg-gray-50">🗂️</button>
+              <select
+                value={sortKey}
+                onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
+                className="px-3 py-2 rounded-md border border-gray-300 text-sm"
+              >
+                <option value="relevance">Relevance</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="title_asc">Title: A–Z</option>
+              </select>
             </div>
             <span className="text-sm text-gray-600">Products ({filtered.length})</span>
           </div>
@@ -193,40 +199,42 @@ export default function CatalogPage({
             {filtered.map((product) => {
               const badge = product.tagId ? tagMap[product.tagId] : '';
               return (
-                <Card key={product.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="p-0">
-                    <div className="relative w-full bg-white aspect-[4/3]">
-                      <Image
-                        src={product.image || 'https://placehold.co/400'}
-                        alt={product.title}
-                        fill
-                        className="object-contain"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        unoptimized
-                        priority={false}
-                      />
-                      <div className="absolute top-2 left-2 flex gap-2">
-                        {badge && <Chip color={badge.toLowerCase().includes('new') ? 'success' : 'danger'} variant="solid" size="sm">{badge}</Chip>}
-                      </div>
-                      <div className="absolute top-2 right-2">
-                        <Button isIconOnly size="sm" variant="ghost">♡</Button>
-                      </div>
+                <div key={product.id} className="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="relative w-full bg-white aspect-[4/3]">
+                    <Image
+                      src={product.image || 'https://placehold.co/400'}
+                      alt={product.title}
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      unoptimized
+                      priority={false}
+                    />
+                    <div className="absolute top-2 left-2 flex gap-2">
+                      {badge && (
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.toLowerCase().includes('new') ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+                          {badge}
+                        </span>
+                      )}
                     </div>
-                  </CardHeader>
-                  <CardBody className="p-4">
+                    <div className="absolute top-2 right-2">
+                      <button className="p-2 rounded-full bg-white/80 hover:bg-white">♡</button>
+                    </div>
+                  </div>
+                  <div className="p-4">
                     <div className="flex flex-col gap-2">
                       <h2 className="text-base font-semibold text-gray-900">{product.title}</h2>
                       <div className="flex items-center gap-2">
                         <span className="text-base font-semibold text-green-600">Rp. {product.price.toLocaleString('id-ID')}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <Button size="sm" variant="flat" color="default">
+                        <button className="px-3 py-1.5 bg-gray-100 text-gray-900 rounded-md text-sm hover:bg-gray-200">
                           Add to Cart
-                        </Button>
+                        </button>
                       </div>
                     </div>
-                  </CardBody>
-                </Card>
+                  </div>
+                </div>
               );
             })}
             {filtered.length === 0 && (
