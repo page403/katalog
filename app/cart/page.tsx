@@ -16,6 +16,7 @@ type CartItem = {
 export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [confirmClear, setConfirmClear] = useState(false);
+  const salesPhone = '62895345672918';
 
   useEffect(() => {
     Promise.resolve().then(() => {
@@ -42,6 +43,17 @@ export default function CartPage() {
       return sum + unitPrice * it.qty;
     }, 0);
   }, [items]);
+
+  const buildWhatsappMessage = () => {
+    const lines = items.map((it) => {
+      const unitPrice = it.unit === 'PCS' && it.pcsPrice != null ? it.pcsPrice : it.price;
+      const subtotal = unitPrice * it.qty;
+      return `${it.title} | Qty: ${it.qty} ${it.unit || 'CTN'} @ Rp ${unitPrice.toLocaleString('id-ID')} = Rp ${subtotal.toLocaleString('id-ID')}`;
+    });
+    const header = `Order for Wahid:\n`;
+    const footer = `\nTotal: Rp ${total.toLocaleString('id-ID')}`;
+    return header + lines.join('\n') + footer;
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 md:p-8">
@@ -158,7 +170,15 @@ export default function CartPage() {
                 >
                   🗑️
                 </button>
-                <button className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700">
+                <button
+                  className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
+                  onClick={() => {
+                    if (!items.length) return;
+                    const msg = buildWhatsappMessage();
+                    const url = `https://wa.me/${salesPhone}?text=${encodeURIComponent(msg)}`;
+                    window.open(url, '_blank');
+                  }}
+                >
                   Checkout
                 </button>
               </div>
