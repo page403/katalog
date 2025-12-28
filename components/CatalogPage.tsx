@@ -188,9 +188,11 @@ export default function CatalogPage({
             </div>
             <div>
               <div className="font-medium mb-2">Price Range</div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-20 text-sm text-gray-600">Min</span>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-20 text-sm text-gray-600">Min</span>
+                  </div>
                   <input
                     type="range"
                     min={0}
@@ -199,10 +201,14 @@ export default function CatalogPage({
                     onChange={(e) => setMinPrice(Number(e.target.value))}
                     className="w-full"
                   />
-                  <span className="text-sm text-gray-600">Rp. {minPrice.toLocaleString('id-ID')}</span>
+                  <div className="flex justify-end mt-1">
+                    <span className="text-sm text-gray-600">Rp. {minPrice.toLocaleString('id-ID')}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-20 text-sm text-gray-600">Max</span>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-20 text-sm text-gray-600">Max</span>
+                  </div>
                   <input
                     type="range"
                     min={0}
@@ -211,7 +217,9 @@ export default function CatalogPage({
                     onChange={(e) => setMaxPriceFilter(Number(e.target.value))}
                     className="w-full"
                   />
-                  <span className="text-sm text-gray-600">Rp. {maxPriceFilter.toLocaleString('id-ID')}</span>
+                  <div className="flex justify-end mt-1">
+                    <span className="text-sm text-gray-600">Rp. {maxPriceFilter.toLocaleString('id-ID')}</span>
+                  </div>
                 </div>
               </div>
             </div>
