@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { getProducts } from '@/lib/storage';
+import Image from 'next/image';
 
 export default async function Home() {
   const products = await getProducts();
@@ -24,19 +25,22 @@ export default async function Home() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products.filter(p => p.status !== 'archived').map((product) => (
-          <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
-            <div className="bg-gray-200">
-              <img 
-                src={product.image} 
-                alt={product.title} 
-                className="w-full h-auto"
+          <div key={product.id} className="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+            <div className="relative w-full bg-gray-50 aspect-[4/3]">
+              <Image
+                src={product.image || 'https://placehold.co/400'}
+                alt={product.title}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                className="object-contain"
+                priority={false}
               />
             </div>
             <div className="p-4 flex flex-col flex-grow">
-              <h2 className="text-xl font-semibold mb-2">{product.title}</h2>
+              <h2 className="text-lg font-semibold mb-2 text-gray-900">{product.title}</h2>
               <div className="flex justify-between items-center mt-auto">
-                <span className="text-lg font-bold text-green-600">Rp. {product.price.toLocaleString('id-ID')}</span>
-                <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded text-sm hover:bg-gray-300">
+                <span className="text-base font-semibold text-green-600">Rp. {product.price.toLocaleString('id-ID')}</span>
+                <button className="px-3 py-1.5 bg-gray-100 text-gray-900 rounded-md text-sm hover:bg-gray-200">
                   Add to Cart
                 </button>
               </div>

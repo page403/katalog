@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface Product {
   id: string;
@@ -347,11 +348,23 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
               {products.map((product) => (
                 <tr key={product.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <img src={product.image} alt={product.title} className="h-10 w-10 rounded-full object-cover" />
+                    <div className="relative h-10 w-10">
+                      <Image
+                        src={product.image || 'https://placehold.co/400'}
+                        alt={product.title}
+                        fill
+                        className="object-contain rounded-full bg-gray-50"
+                        sizes="40px"
+                      />
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.title}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rp. {product.price.toLocaleString('id-ID')}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.status === 'archived' ? 'Archived' : 'Published'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${product.status === 'archived' ? 'bg-yellow-50 text-yellow-700 ring-yellow-200' : 'bg-green-50 text-green-700 ring-green-200'}`}>
+                      {product.status === 'archived' ? 'Archived' : 'Published'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button 
                       onClick={() => handleEditClick(product)}
@@ -377,7 +390,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
                             }
                           } catch {}
                         }}
-                        className="text-green-600 hover:text-green-900 mr-4"
+                        className="text-green-700 hover:text-green-900 mr-4"
                       >
                         Publish
                       </button>
@@ -399,7 +412,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
                             }
                           } catch {}
                         }}
-                        className="text-yellow-600 hover:text-yellow-900 mr-4"
+                        className="text-yellow-700 hover:text-yellow-900 mr-4"
                       >
                         Archive
                       </button>
