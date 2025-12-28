@@ -7,6 +7,7 @@ type Product = {
   id: string;
   title: string;
   price: number;
+  pcsPrice?: number | null;
   image?: string;
   status?: 'published' | 'archived';
   categoryId?: string | null;
@@ -39,12 +40,12 @@ export default function CatalogPage({
   const addToCart = (p: Product) => {
     try {
       const raw = typeof window !== 'undefined' ? window.localStorage.getItem('cart') : null;
-      const cart: Array<{ id: string; title: string; price: number; image?: string; qty: number }> = raw ? JSON.parse(raw) : [];
+      const cart: Array<{ id: string; title: string; price: number; pcsPrice?: number | null; image?: string; qty: number; unit?: 'CTN' | 'PCS' }> = raw ? JSON.parse(raw) : [];
       const idx = cart.findIndex((i) => i.id === p.id);
       if (idx >= 0) {
         cart[idx].qty += 1;
       } else {
-        cart.push({ id: p.id, title: p.title, price: p.price, image: p.image, qty: 1 });
+        cart.push({ id: p.id, title: p.title, price: p.price, pcsPrice: p.pcsPrice ?? null, image: p.image, qty: 1, unit: 'CTN' });
       }
       window.localStorage.setItem('cart', JSON.stringify(cart));
       const count = cart.reduce((sum, it) => sum + it.qty, 0);

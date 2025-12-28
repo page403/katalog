@@ -7,12 +7,15 @@ type CartItem = {
   id: string;
   title: string;
   price: number;
+  pcsPrice?: number | null;
   image?: string;
   qty: number;
+  unit?: 'CTN' | 'PCS';
 };
 
 export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   useEffect(() => {
     Promise.resolve().then(() => {
@@ -34,7 +37,10 @@ export default function CartPage() {
   };
 
   const total = useMemo(() => {
-    return items.reduce((sum, it) => sum + it.price * it.qty, 0);
+    return items.reduce((sum, it) => {
+      const unitPrice = it.unit === 'PCS' && it.pcsPrice != null ? it.pcsPrice : it.price;
+      return sum + unitPrice * it.qty;
+    }, 0);
   }, [items]);
 
   return (
@@ -66,7 +72,9 @@ export default function CartPage() {
                     </div>
                     <div className="flex-1">
                       <div className="font-semibold">{it.title}</div>
-                      <div className="text-sm text-gray-600">Rp. {it.price.toLocaleString('id-ID')}</div>
+                      <div className="text-sm text-gray-600">
+                        Rp. {(it.unit === 'PCS' && it.pcsPrice != null ? it.pcsPrice : it.price).toLocaleString('id-ID')} / {it.unit || 'CTN'}
+                      </div>
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
@@ -95,6 +103,33 @@ export default function CartPage() {
                         +
                       </button>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-600">Unit</span>
+                      <div className="flex rounded-md border border-gray-200 overflow-hidden">
+                        <button
+                          className={`px-2 py-1 text-sm ${it.unit !== 'PCS' ? 'bg-gray-100' : ''}`}
+                          onClick={() => {
+                            const next = [...items];
+                            next[idx] = { ...next[idx], unit: 'CTN' };
+                            save(next);
+                          }}
+                        >
+                          CTN
+                        </button>
+                        <button
+                          className={`px-2 py-1 text-sm ${it.unit === 'PCS' ? 'bg-gray-100' : ''}`}
+                          onClick={() => {
+                            if (it.pcsPrice == null) return;
+                            const next = [...items];
+                            next[idx] = { ...next[idx], unit: 'PCS' };
+                            save(next);
+                          }}
+                          disabled={it.pcsPrice == null}
+                        >
+                          PCS
+                        </button>
+                      </div>
+                    </div>
                     <button
                       aria-label="Remove"
                       className="p-2 rounded border border-red-300 text-red-700 hover:bg-red-50"
@@ -119,11 +154,7 @@ export default function CartPage() {
                   aria-label="Empty cart"
                   title="Empty cart"
                   className="p-2 rounded-md bg-red-600 text-white hover:bg-red-700"
-                  onClick={() => {
-                    if (window.confirm('Empty all items from the cart?')) {
-                      save([]);
-                    }
-                  }}
+                  onClick={() => setConfirmClear(true)}
                 >
                   🗑️
                 </button>
@@ -132,6 +163,31 @@ export default function CartPage() {
                 </button>
               </div>
             </div>
+            {confirmClear && (
+              <div className="fixed inset-0 z-50 bg-black/40 grid place-items-center p-4">
+                <div className="w-full max-w-sm bg-white rounded-xl shadow ring-1 ring-gray-200 p-4">
+                  <div className="text-lg font-semibold mb-2">Empty Cart</div>
+                  <p className="text-sm text-gray-600 mb-4">Are you sure you want to remove all items from the cart?</p>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      className="px-3 py-2 rounded-md border border-gray-200 hover:bg-gray-50"
+                      onClick={() => setConfirmClear(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="px-3 py-2 rounded-md bg-red-600 text-white hover:bg-red-700"
+                      onClick={() => {
+                        save([]);
+                        setConfirmClear(false);
+                      }}
+                    >
+                      Empty
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

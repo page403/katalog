@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 export default function AddProductForm() {
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
+  const [pcsPrice, setPcsPrice] = useState('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
   const [message, setMessage] = useState('');
@@ -19,7 +20,7 @@ export default function AddProductForm() {
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, price, description, image }),
+        body: JSON.stringify({ title, price, pcsPrice, description, image }),
       });
 
       if (res.ok) {
@@ -77,6 +78,16 @@ export default function AddProductForm() {
             onChange={(e) => setPrice(e.target.value)}
             className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Price per PCS (optional)</label>
+          <input
+            type="number"
+            value={pcsPrice}
+            onChange={(e) => setPcsPrice(e.target.value)}
+            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Leave empty if not applicable"
           />
         </div>
         <div className="mb-4">

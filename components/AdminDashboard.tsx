@@ -9,6 +9,7 @@ interface Product {
   id: string;
   title: string;
   price: number;
+  pcsPrice?: number | null;
   description?: string;
   image?: string;
   supplierId?: string | null;
@@ -28,6 +29,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
   // Form State
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
+  const [pcsPrice, setPcsPrice] = useState('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
   const [supplierId, setSupplierId] = useState<string | ''>('');
@@ -64,6 +66,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
   const resetForm = () => {
     setTitle('');
     setPrice('');
+    setPcsPrice('');
     setDescription('');
     setImage('');
     setSupplierId('');
@@ -77,6 +80,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
     setEditingId(product.id);
     setTitle(product.title);
     setPrice(product.price.toString());
+    setPcsPrice(product.pcsPrice != null ? product.pcsPrice.toString() : '');
     setDescription(product.description || '');
     setImage(product.image || '');
     setSupplierId(product.supplierId || '');
@@ -112,6 +116,7 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
     const productData = {
       title,
       price,
+      pcsPrice,
       description,
       image,
       supplierId: supplierId || null,
@@ -250,6 +255,16 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
               onChange={(e) => setPrice(e.target.value)}
               className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
+            />
+          </div>
+          <div className="col-span-1">
+            <label className="block text-gray-700 mb-2">Price per PCS (optional)</label>
+            <input
+              type="number"
+              value={pcsPrice}
+              onChange={(e) => setPcsPrice(e.target.value)}
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Leave empty if not applicable"
             />
           </div>
           <div className="col-span-1 md:col-span-2">

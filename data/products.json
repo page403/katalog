@@ -8,7 +8,8 @@
     "supplierId": "1766899996938",
     "tagId": null,
     "categoryId": "1766911555923",
-    "status": "published"
+    "status": "published",
+    "pcsPrice": null
   },
   {
     "id": "1766891900698",
@@ -16,7 +17,8 @@
     "price": 12000,
     "description": "z",
     "image": "https://placehold.co/400",
-    "status": "published"
+    "status": "published",
+    "pcsPrice": null
   },
   {
     "id": "1766911600231",
@@ -27,7 +29,8 @@
     "supplierId": "1766899996938",
     "tagId": null,
     "categoryId": "1766911596944",
-    "status": "published"
+    "status": "published",
+    "pcsPrice": null
   },
   {
     "id": "1766915445233",
@@ -38,6 +41,19 @@
     "supplierId": "1766899996938",
     "tagId": null,
     "categoryId": "1766911555923",
+    "status": "published",
+    "pcsPrice": null
+  },
+  {
+    "id": "1766921004162",
+    "title": "asfdsfa",
+    "price": 120000,
+    "description": "",
+    "image": "https://placehold.co/400",
+    "supplierId": null,
+    "tagId": null,
+    "categoryId": "1766911596944",
+    "pcsPrice": 6000,
     "status": "published"
   }
 ]
