@@ -28,5 +28,16 @@
     "tagId": null,
     "categoryId": "1766911596944",
     "status": "published"
+  },
+  {
+    "id": "1766915445233",
+    "title": "sdgsdg",
+    "price": 235,
+    "description": "",
+    "image": "https://placehold.co/400",
+    "supplierId": "1766899996938",
+    "tagId": null,
+    "categoryId": "1766911555923",
+    "status": "published"
   }
 ]
