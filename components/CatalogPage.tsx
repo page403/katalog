@@ -107,11 +107,6 @@ export default function CatalogPage({
     return counts;
   }, [published]);
 
-  const tagMap = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const t of tags) m[t.id] = t.name;
-    return m;
-  }, [tags]);
 
   const filtered = useMemo(() => {
     let list = [...published];
@@ -322,7 +317,6 @@ export default function CatalogPage({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filtered.map((product) => {
-              const tagsForProduct = (product.tagIds && product.tagIds.length ? product.tagIds : (product.tagId ? [product.tagId] : [])).map((id) => tagMap[id]).filter(Boolean);
               return (
                 <div key={product.id} className="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                   <div className="relative w-full bg-white aspect-[4/3]">
@@ -335,13 +329,6 @@ export default function CatalogPage({
                       unoptimized
                       priority={false}
                     />
-                    <div className="absolute top-2 left-2 flex gap-2">
-                      {tagsForProduct.slice(0, 2).map((label) => (
-                        <span key={label} className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-900 text-white">
-                          {label}
-                        </span>
-                      ))}
-                    </div>
                     <div className="absolute top-2 right-2">
                       {/* removed heart icon */}
                     </div>
