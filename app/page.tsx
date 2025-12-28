@@ -26,7 +26,7 @@ export default async function Home() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products.filter(p => p.status !== 'archived').map((product) => (
           <div key={product.id} className="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-            <div className="relative w-full bg-gray-50 aspect-[4/3]">
+            <div className="relative w-full bg-white aspect-[4/3]">
               <Image
                 src={product.image || 'https://placehold.co/400'}
                 alt={product.title}
