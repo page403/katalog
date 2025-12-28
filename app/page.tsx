@@ -25,7 +25,7 @@ export default async function Home() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products.map((product) => (
           <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
-            <div className="bg-gray-200">
+            <div className="bg-white">
               <img 
                 src={product.image} 
                 alt={product.title} 
