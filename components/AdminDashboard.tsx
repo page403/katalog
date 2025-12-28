@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Product {
   id: string;
   title: string;
   price: number;
-  description: string;
-  image: string;
+  description?: string;
+  image?: string;
+  supplierId?: string | null;
+  tagId?: string | null;
 }
 
 interface AdminDashboardProps {
@@ -24,15 +26,38 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
+  const [supplierId, setSupplierId] = useState<string | ''>('');
+  const [tagId, setTagId] = useState<string | ''>('');
   const [message, setMessage] = useState('');
+  const [suppliers, setSuppliers] = useState<Array<{ id: string; name: string }>>([]);
+  const [tags, setTags] = useState<Array<{ id: string; name: string }>>([]);
+  const [newSupplierName, setNewSupplierName] = useState('');
+  const [newTagName, setNewTagName] = useState('');
   
   const router = useRouter();
+
+  useEffect(() => {
+    const loadMeta = async () => {
+      try {
+        const [sRes, tRes] = await Promise.all([fetch('/api/suppliers'), fetch('/api/tags')]);
+        if (sRes.ok) {
+          setSuppliers(await sRes.json());
+        }
+        if (tRes.ok) {
+          setTags(await tRes.json());
+        }
+      } catch {}
+    };
+    loadMeta();
+  }, []);
 
   const resetForm = () => {
     setTitle('');
     setPrice('');
     setDescription('');
     setImage('');
+    setSupplierId('');
+    setTagId('');
     setEditingId(null);
     setMessage('');
   };
@@ -41,8 +66,10 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
     setEditingId(product.id);
     setTitle(product.title);
     setPrice(product.price.toString());
-    setDescription(product.description);
-    setImage(product.image);
+    setDescription(product.description || '');
+    setImage(product.image || '');
+    setSupplierId(product.supplierId || '');
+    setTagId(product.tagId || '');
     setMessage('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -75,6 +102,8 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
       price,
       description,
       image,
+      supplierId: supplierId || null,
+      tagId: tagId || null,
       ...(editingId && { id: editingId }),
     };
 
@@ -106,6 +135,38 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
     } catch (err) {
       setMessage('An error occurred');
     }
+  };
+
+  const handleAddSupplier = async () => {
+    if (!newSupplierName.trim()) return;
+    try {
+      const res = await fetch('/api/suppliers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newSupplierName.trim() }),
+      });
+      if (res.ok) {
+        const sup = await res.json();
+        setSuppliers([...suppliers, sup]);
+        setNewSupplierName('');
+      }
+    } catch {}
+  };
+
+  const handleAddTag = async () => {
+    if (!newTagName.trim()) return;
+    try {
+      const res = await fetch('/api/tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newTagName.trim() }),
+      });
+      if (res.ok) {
+        const tag = await res.json();
+        setTags([...tags, tag]);
+        setNewTagName('');
+      }
+    } catch {}
   };
 
   const handleLogout = async () => {
@@ -174,7 +235,6 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
               value={image}
               onChange={(e) => setImage(e.target.value)}
               className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
               placeholder="https://example.com/image.jpg"
             />
           </div>
@@ -184,9 +244,34 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
               rows={3}
             />
+          </div>
+          <div className="col-span-1">
+            <label className="block text-gray-700 mb-2">Supplier</label>
+            <select
+              value={supplierId}
+              onChange={(e) => setSupplierId(e.target.value)}
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">None</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-span-1">
+            <label className="block text-gray-700 mb-2">Tag</label>
+            <select
+              value={tagId}
+              onChange={(e) => setTagId(e.target.value)}
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">None</option>
+              {tags.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
           </div>
           <div className="col-span-1 md:col-span-2">
             <button
@@ -197,6 +282,50 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
             </button>
           </div>
         </form>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow-md mb-10">
+        <h2 className="text-xl font-bold mb-4">Manage Suppliers and Tags</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-gray-700 mb-2">Add Supplier</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newSupplierName}
+                onChange={(e) => setNewSupplierName(e.target.value)}
+                className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Supplier name"
+              />
+              <button
+                onClick={handleAddSupplier}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                type="button"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-gray-700 mb-2">Add Tag</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Tag name"
+              />
+              <button
+                onClick={handleAddTag}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                type="button"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Product List Section */}
