@@ -16,7 +16,7 @@ type CartItem = {
 export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [confirmClear, setConfirmClear] = useState(false);
-  const salesPhone = '62895345672918';
+  const salesPhone = '62895346372918';
 
   useEffect(() => {
     Promise.resolve().then(() => {
