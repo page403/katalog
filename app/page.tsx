@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import fs from 'fs';
 import path from 'path';
+import { cookies } from 'next/headers';
 
 interface Product {
   id: string;
@@ -22,14 +23,22 @@ async function getProducts(): Promise<Product[]> {
 
 export default async function Home() {
   const products = await getProducts();
+  const cookieStore = await cookies();
+  const isLoggedIn = cookieStore.get('auth')?.value === 'true';
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <header className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Product Store</h1>
-        <Link href="/login" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-          Login
-        </Link>
+        <h1 className="text-3xl font-bold text-gray-800">Katalog</h1>
+        {!isLoggedIn ? (
+          <Link href="/login" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            Login
+          </Link>
+        ) : (
+          <Link href="/login" className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900">
+            Admin Panel
+          </Link>
+        )}
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -44,9 +53,8 @@ export default async function Home() {
             </div>
             <div className="p-4 flex flex-col flex-grow">
               <h2 className="text-xl font-semibold mb-2">{product.title}</h2>
-              <p className="text-gray-600 text-sm mb-4 flex-grow">{product.description}</p>
               <div className="flex justify-between items-center mt-auto">
-                <span className="text-lg font-bold text-green-600">${product.price}</span>
+                <span className="text-lg font-bold text-green-600">Rp. {product.price.toLocaleString('id-ID')}</span>
                 <button className="px-3 py-1 bg-gray-200 text-gray-800 rounded text-sm hover:bg-gray-300">
                   Add to Cart
                 </button>
