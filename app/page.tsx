@@ -1,25 +1,6 @@
 import Link from 'next/link';
-import fs from 'fs';
-import path from 'path';
 import { cookies } from 'next/headers';
-
-interface Product {
-  id: string;
-  title: string;
-  price: number;
-  description: string;
-  image: string;
-}
-
-async function getProducts(): Promise<Product[]> {
-  const filePath = path.join(process.cwd(), 'data', 'products.json');
-  try {
-    const fileContents = fs.readFileSync(filePath, 'utf8');
-    return JSON.parse(fileContents);
-  } catch (error) {
-    return [];
-  }
-}
+import { getProducts } from '@/lib/storage';
 
 export default async function Home() {
   const products = await getProducts();

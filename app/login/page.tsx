@@ -1,18 +1,7 @@
 import { cookies } from 'next/headers';
 import LoginForm from '@/components/LoginForm';
 import AdminDashboard from '@/components/AdminDashboard';
-import path from 'path';
-import fs from 'fs';
-
-async function getProducts() {
-  const filePath = path.join(process.cwd(), 'data', 'products.json');
-  try {
-    const fileContents = fs.readFileSync(filePath, 'utf8');
-    return JSON.parse(fileContents);
-  } catch (error) {
-    return [];
-  }
-}
+import { getProducts } from '@/lib/storage';
 
 export default async function LoginPage() {
   const cookieStore = await cookies();
