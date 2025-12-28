@@ -1,6 +1,7 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type Product = {
   id: string;
@@ -34,6 +35,43 @@ export default function CatalogPage({
   const maxPrice = useMemo(() => Math.max(0, ...published.map((p) => p.price)), [published]);
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPriceFilter, setMaxPriceFilter] = useState<number>(maxPrice);
+  const [cartCount, setCartCount] = useState<number>(0);
+  const addToCart = (p: Product) => {
+    try {
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem('cart') : null;
+      const cart: Array<{ id: string; title: string; price: number; image?: string; qty: number }> = raw ? JSON.parse(raw) : [];
+      const idx = cart.findIndex((i) => i.id === p.id);
+      if (idx >= 0) {
+        cart[idx].qty += 1;
+      } else {
+        cart.push({ id: p.id, title: p.title, price: p.price, image: p.image, qty: 1 });
+      }
+      window.localStorage.setItem('cart', JSON.stringify(cart));
+      const count = cart.reduce((sum, it) => sum + it.qty, 0);
+      setCartCount(count);
+    } catch {}
+  };
+  useEffect(() => {
+    Promise.resolve().then(() => {
+      try {
+        const raw = window.localStorage.getItem('cart');
+        const cart: Array<{ qty: number }> = raw ? JSON.parse(raw) : [];
+        const count = cart.reduce((sum, it) => sum + it.qty, 0);
+        setCartCount(count);
+      } catch {}
+    });
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'cart') {
+        try {
+          const cart: Array<{ qty: number }> = e.newValue ? JSON.parse(e.newValue) : [];
+          const count = cart.reduce((sum, it) => sum + it.qty, 0);
+          setCartCount(count);
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const catCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -96,12 +134,15 @@ export default function CatalogPage({
   return (
     <div className="min-h-screen">
       <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-end py-1 px-4 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
-        <div className="hidden md:flex items-center gap-3">
-          <button className="p-2 rounded-md hover:bg-gray-100">🛒</button>
+        <div className="flex items-center gap-3">
+          <Link href="/cart" className="relative p-2 rounded-md hover:bg-gray-100">
+            🛒
+            {cartCount > 0 && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-red-600 rounded-full" />}
+          </Link>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 mt-16">
+      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 mt-12 md:mt-16">
         <aside className="bg-white rounded-xl p-4 ring-1 ring-gray-200">
           <div className="flex items-center justify-between mb-3">
             <span className="font-semibold">Filters</span>
@@ -261,12 +302,15 @@ export default function CatalogPage({
                   <div className="p-4">
                     <div className="flex flex-col gap-2">
                       <h2 className="text-base font-semibold text-gray-900">{product.title}</h2>
-                      <div className="flex items-center gap-2">
-                        <span className="text-base font-semibold text-green-600">Rp. {product.price.toLocaleString('id-ID')}</span>
-                      </div>
                       <div className="flex items-center justify-between">
-                        <button className="px-3 py-1.5 bg-gray-100 text-gray-900 rounded-md text-sm hover:bg-gray-200">
-                          Add to Cart
+                        <span className="text-base font-semibold text-green-600">Rp. {product.price.toLocaleString('id-ID')}</span>
+                        <button
+                          aria-label="Add to cart"
+                          onClick={() => addToCart(product)}
+                          className="p-2 rounded-md border border-gray-200 hover:bg-gray-50"
+                          title="Add to cart"
+                        >
+                          🛒
                         </button>
                       </div>
                     </div>
