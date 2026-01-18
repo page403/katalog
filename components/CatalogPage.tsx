@@ -247,43 +247,7 @@ export default function CatalogPage({
                 {tags.length === 0 && <div className="text-xs text-gray-500">No tags available</div>}
               </div>
             </div>
-            <div>
-              <div className="font-medium mb-2">Price Range</div>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="w-20 text-sm text-gray-600">Min</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={maxPrice}
-                    value={minPrice}
-                    onChange={(e) => setMinPrice(Number(e.target.value))}
-                    className="w-full"
-                  />
-                  <div className="flex justify-end mt-1">
-                    <span className="text-sm text-gray-600">Rp. {minPrice.toLocaleString('id-ID')}</span>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="w-20 text-sm text-gray-600">Max</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={maxPrice}
-                    value={maxPriceFilter}
-                    onChange={(e) => setMaxPriceFilter(Number(e.target.value))}
-                    className="w-full"
-                  />
-                  <div className="flex justify-end mt-1">
-                    <span className="text-sm text-gray-600">Rp. {maxPriceFilter.toLocaleString('id-ID')}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            
           </div>
         </aside>
 
