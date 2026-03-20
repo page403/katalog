@@ -37,7 +37,10 @@ export default function CatalogPage({
   const [sortKey, setSortKey] = useState<
     'relevance' | 'price_asc' | 'price_desc' | 'title_asc' | 'category_asc' | 'brand_asc'
   >('relevance');
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(() => {
+    if (typeof window === 'undefined') return true; // SSR fallback
+    return window.matchMedia('(min-width: 768px)').matches;
+  });
   const maxPrice = useMemo(() => Math.max(0, ...published.map((p) => p.price)), [published]);
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPriceFilter, setMaxPriceFilter] = useState<number>(maxPrice);
@@ -199,10 +202,14 @@ export default function CatalogPage({
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 mt-12 md:mt-16">
+      <div
+        className={`grid grid-cols-1 gap-6 mt-12 md:mt-16 ${
+          filtersOpen ? 'md:grid-cols-[280px_1fr]' : 'md:grid-cols-[1fr]'
+        }`}
+      >
         <aside
           id="filters-panel"
-          className={`${filtersOpen ? 'block' : 'hidden'} md:block bg-white rounded-xl p-4 ring-1 ring-gray-200`}
+          className={`${filtersOpen ? 'block' : 'hidden'} bg-white rounded-xl p-4 ring-1 ring-gray-200`}
         >
           <div className="flex items-center justify-between mb-3">
             <span className="font-semibold">Filters</span>
@@ -309,7 +316,7 @@ export default function CatalogPage({
                 />
               </div>
               <button
-                className="md:hidden p-2 rounded-md border border-gray-200 hover:bg-gray-50 flex items-center gap-2"
+                className="p-2 rounded-md border border-gray-200 hover:bg-gray-50 flex items-center gap-2"
                 onClick={() => setFiltersOpen((v) => !v)}
                 aria-controls="filters-panel"
                 aria-expanded={filtersOpen}
