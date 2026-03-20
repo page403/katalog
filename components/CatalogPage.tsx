@@ -192,7 +192,7 @@ export default function CatalogPage({
   ]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-28">
       <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-end py-1 px-4 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
         <div className="flex items-center gap-3">
           <Link href="/cart" className="relative p-2 rounded-md hover:bg-gray-100">
@@ -304,39 +304,6 @@ export default function CatalogPage({
 
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="relative w-48 md:w-64">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-                <input
-                  aria-label="Search products"
-                  placeholder="Search products..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black/20"
-                />
-              </div>
-              <button
-                className="p-2 rounded-md border border-gray-200 hover:bg-gray-50 flex items-center gap-2"
-                onClick={() => setFiltersOpen((v) => !v)}
-                aria-controls="filters-panel"
-                aria-expanded={filtersOpen}
-              >
-                <span aria-hidden>🗂️</span>
-                <span className="text-sm font-medium">{filtersOpen ? 'Hide' : 'Filters'}</span>
-              </button>
-              <select
-                value={sortKey}
-                onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
-                className="px-3 py-2 rounded-md border border-gray-300 text-sm"
-              >
-                <option value="relevance">Relevance</option>
-                <option value="price_asc">Price: Low to High</option>
-                <option value="price_desc">Price: High to Low</option>
-                <option value="title_asc">Title: A–Z</option>
-                <option value="category_asc">Category: A–Z</option>
-                <option value="brand_asc">Brand: A–Z</option>
-              </select>
-            </div>
             <span className="text-sm text-gray-600">Products ({filtered.length})</span>
           </div>
 
@@ -383,10 +350,50 @@ export default function CatalogPage({
           </div>
         </section>
       </div>
+
+      {/* Sticky bottom controls */}
+      <div className="fixed bottom-0 inset-x-0 z-40 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-t border-gray-200">
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-3 flex-wrap justify-center">
+            <div className="relative w-full max-w-xs">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+              <input
+                aria-label="Search products"
+                placeholder="Search products..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black/20"
+              />
+            </div>
+            <button
+              className="p-2 rounded-md border border-gray-200 hover:bg-gray-50 flex items-center gap-2"
+              onClick={() => setFiltersOpen((v) => !v)}
+              aria-controls="filters-panel"
+              aria-expanded={filtersOpen}
+            >
+              <span aria-hidden>🗂️</span>
+              <span className="text-sm font-medium">{filtersOpen ? 'Hide' : 'Filters'}</span>
+            </button>
+            <select
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
+              className="px-3 py-2 rounded-md border border-gray-300 text-sm"
+            >
+              <option value="relevance">Relevance</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="title_asc">Title: A–Z</option>
+              <option value="category_asc">Category: A–Z</option>
+              <option value="brand_asc">Brand: A–Z</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <button
         aria-label="Back to top"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-4 right-4 p-3 rounded-full bg-gray-800 text-white shadow hover:bg-gray-900"
+        className="fixed bottom-24 right-4 p-3 rounded-full bg-gray-800 text-white shadow hover:bg-gray-900"
       >
         ↑
       </button>
