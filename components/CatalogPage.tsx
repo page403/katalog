@@ -42,9 +42,9 @@ export default function CatalogPage({
 }) {
   const published = products.filter((p) => p.status !== 'archived');
   const activeBanners = banners.filter(b => b.active);
-   const [currentBanner, setCurrentBanner] = useState(0);
-   const [isBannerOpen, setIsBannerOpen] = useState(false);
-   const [query, setQuery] = useState('');
+  const [currentBanner, setCurrentBanner] = useState(0);
+  const [isBannerOpen, setIsBannerOpen] = useState(true);
+  const [query, setQuery] = useState('');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -107,15 +107,6 @@ export default function CatalogPage({
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, []);
-
-  useEffect(() => {
-    if (activeBanners.length > 0) {
-      const bannerSeen = sessionStorage.getItem('banner_seen');
-      if (!bannerSeen) {
-        setIsBannerOpen(true);
-      }
-    }
-  }, [activeBanners.length]);
 
   useEffect(() => {
     if (activeBanners.length > 1 && isBannerOpen) {
@@ -369,17 +360,15 @@ export default function CatalogPage({
                 className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
                 onClick={() => {
                   setIsBannerOpen(false);
-                  sessionStorage.setItem('banner_seen', 'true');
                 }}
               />
               
               {/* Banner Card */}
-              <div className="relative w-full max-w-2xl bg-white rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+              <div className="relative w-full max-w-2xl bg-white rounded-2xl overflow-hidden shadow-2xl">
                 {/* Close Button */}
                 <button 
                   onClick={() => {
                     setIsBannerOpen(false);
-                    sessionStorage.setItem('banner_seen', 'true');
                   }}
                   className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/20 text-white hover:bg-black/40 transition-colors"
                 >
@@ -412,7 +401,6 @@ export default function CatalogPage({
                               href={banner.link}
                               onClick={() => {
                                 setIsBannerOpen(false);
-                                sessionStorage.setItem('banner_seen', 'true');
                               }}
                               className="inline-block w-fit px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-100 transition-colors"
                             >
