@@ -47,6 +47,7 @@ const suppliersFilePath = path.join(process.cwd(), 'data', 'suppliers.json');
 const tagsFilePath = path.join(process.cwd(), 'data', 'tags.json');
 const categoriesFilePath = path.join(process.cwd(), 'data', 'categories.json');
 const salesFilePath = path.join(process.cwd(), 'data', 'sales.json');
+const bannerFilePath = path.join(process.cwd(), 'data', 'banner.json');
 const kvReady = !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
 const dbUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 const dbReady = !!dbUrl;
@@ -59,6 +60,7 @@ const KV_SUPPLIERS_KEY = 'suppliers';
 const KV_TAGS_KEY = 'tags';
 const KV_CATEGORIES_KEY = 'categories';
 const KV_SALES_KEY = 'sales';
+const KV_BANNER_KEY = 'banner';
 
 async function readFsProducts(): Promise<Product[]> {
   try {
@@ -87,6 +89,23 @@ export interface Category {
   id: string;
   name: string;
 }
+
+export interface Banner {
+  id: string;
+  title: string;
+  price: number;
+  image: string;
+  link?: string;
+  active: boolean;
+}
+
+export type AddBannerInput = {
+  title: string;
+  price: number | string;
+  image: string;
+  link?: string;
+  active?: boolean;
+};
 
 export interface Salesperson {
   id: string;
@@ -146,6 +165,19 @@ async function writeFsSales(sales: Salesperson[]) {
   fs.writeFileSync(salesFilePath, JSON.stringify(sales, null, 2));
 }
 
+async function readFsBanner(): Promise<Banner[]> {
+  try {
+    const fileContents = fs.readFileSync(bannerFilePath, 'utf8');
+    return JSON.parse(fileContents);
+  } catch {
+    return [];
+  }
+}
+
+async function writeFsBanner(banners: Banner[]) {
+  fs.writeFileSync(bannerFilePath, JSON.stringify(banners, null, 2));
+}
+
 async function ensureTable() {
   if (!useDb || !sql) return;
   await sql`
@@ -183,6 +215,16 @@ async function ensureTable() {
       id TEXT PRIMARY KEY,
       name TEXT UNIQUE NOT NULL,
       phone TEXT NOT NULL
+    )
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS banners (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      price NUMERIC NOT NULL,
+      image TEXT NOT NULL,
+      link TEXT,
+      active BOOLEAN DEFAULT TRUE
     )
   `;
   await sql`
@@ -551,5 +593,111 @@ export async function addSalesperson(name: string, phone: string): Promise<Sales
     const updated = exists ? list : [...list, sales];
     await writeFsSales(updated);
     return sales;
+  }
+}
+
+export async function getBanners(): Promise<Banner[]> {
+  if (useDb && sql) {
+    await ensureTable();
+    const rows = await sql`
+      SELECT id, title, price, image, link, active FROM banners ORDER BY id DESC
+    ` as unknown as Banner[];
+    return rows.map(r => ({ ...r, price: Number(r.price) }));
+  } else if (useKv) {
+    const list = await kv.get<Banner[]>(KV_BANNER_KEY);
+    return Array.isArray(list) ? list : [];
+  }
+  return readFsBanner();
+}
+
+export async function addBanner(input: AddBannerInput): Promise<Banner> {
+  if (vercelWithoutStorage) {
+    throw new Error('Storage not configured on Vercel. Set Neon Postgres or Vercel KV environment variables.');
+  }
+  const banner: Banner = {
+    id: Date.now().toString(),
+    title: input.title,
+    price: normalizePrice(input.price),
+    image: input.image,
+    link: input.link || '',
+    active: input.active ?? true,
+  };
+  if (useDb && sql) {
+    await ensureTable();
+    await sql`
+      INSERT INTO banners (id, title, price, image, link, active)
+      VALUES (${banner.id}, ${banner.title}, ${banner.price}, ${banner.image}, ${banner.link}, ${banner.active})
+    `;
+  } else if (useKv) {
+    const list = await getBanners();
+    const updated = [...list, banner];
+    await kv.set(KV_BANNER_KEY, updated);
+  } else {
+    const list = await getBanners();
+    const updated = [...list, banner];
+    await writeFsBanner(updated);
+  }
+  return banner;
+}
+
+export async function updateBanner(banner: Banner): Promise<Banner> {
+  if (vercelWithoutStorage) {
+    throw new Error('Storage not configured on Vercel. Set Neon Postgres or Vercel KV environment variables.');
+  }
+  const updatedBanner = {
+    ...banner,
+    price: normalizePrice(banner.price)
+  };
+  if (useDb && sql) {
+    await ensureTable();
+    await sql`
+      UPDATE banners
+      SET title = ${updatedBanner.title},
+          price = ${updatedBanner.price},
+          image = ${updatedBanner.image},
+          link = ${updatedBanner.link},
+          active = ${updatedBanner.active}
+      WHERE id = ${updatedBanner.id}
+    `;
+  } else if (useKv) {
+    const list = await getBanners();
+    const index = list.findIndex(b => b.id === updatedBanner.id);
+    if (index !== -1) {
+      const updated = [...list];
+      updated[index] = updatedBanner;
+      await kv.set(KV_BANNER_KEY, updated);
+    }
+  } else {
+    const list = await getBanners();
+    const index = list.findIndex(b => b.id === updatedBanner.id);
+    if (index !== -1) {
+      const updated = [...list];
+      updated[index] = updatedBanner;
+      await writeFsBanner(updated);
+    }
+  }
+  return updatedBanner;
+}
+
+export async function deleteBanner(id: string): Promise<boolean> {
+  if (vercelWithoutStorage) {
+    throw new Error('Storage not configured on Vercel. Set Neon Postgres or Vercel KV environment variables.');
+  }
+  if (useDb && sql) {
+    await ensureTable();
+    await sql`DELETE FROM banners WHERE id = ${id}`;
+    return true;
+  } else if (useKv) {
+    const list = await getBanners();
+    const filtered = list.filter(b => b.id !== id);
+    if (filtered.length === list.length) return false;
+    await kv.set(KV_BANNER_KEY, filtered);
+    return true;
+  } else {
+    const list = await getBanners();
+    const filtered = list.filter(b => b.id !== id);
+    if (filtered.length === list.length) return false;
+    await writeFsBanner(filtered);
+    return true;
   }
 }

@@ -16,6 +16,15 @@ type Product = {
   supplierId?: string | null;
 };
 
+type Banner = {
+  id: string;
+  title: string;
+  price: number;
+  image: string;
+  link?: string;
+  active: boolean;
+};
+
 type MetaItem = { id: string; name: string };
 
 export default function CatalogPage({
@@ -23,13 +32,17 @@ export default function CatalogPage({
   categories,
   tags,
   suppliers,
+  banners = [],
 }: {
   products: Product[];
   categories: MetaItem[];
   tags: MetaItem[];
   suppliers: MetaItem[];
+  banners?: Banner[];
 }) {
   const published = products.filter((p) => p.status !== 'archived');
+  const activeBanners = banners.filter(b => b.active);
+  const [currentBanner, setCurrentBanner] = useState(0);
   const [query, setQuery] = useState('');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
@@ -93,6 +106,15 @@ export default function CatalogPage({
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, []);
+
+  useEffect(() => {
+    if (activeBanners.length > 1) {
+      const timer = setInterval(() => {
+        setCurrentBanner((prev) => (prev + 1) % activeBanners.length);
+      }, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [activeBanners.length]);
 
   useEffect(() => {
     const mql = window.matchMedia('(min-width: 768px)');
@@ -330,6 +352,69 @@ export default function CatalogPage({
         </aside>
 
         <section className="space-y-4">
+          {activeBanners.length > 0 && (
+            <div className="relative w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-sm group">
+              <div 
+                className="flex transition-transform duration-500 ease-out h-full"
+                style={{ transform: `translateX(-${currentBanner * 100}%)` }}
+              >
+                {activeBanners.map((banner) => (
+                  <div key={banner.id} className="relative min-w-full h-full">
+                    <Image
+                      src={banner.image}
+                      alt={banner.title}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex flex-col justify-center px-8 md:px-12 text-white">
+                      <h2 className="text-2xl md:text-3xl font-bold mb-2">{banner.title}</h2>
+                      {banner.price > 0 && (
+                        <p className="text-lg md:text-xl font-semibold text-green-400 mb-4">
+                          Starting from Rp. {banner.price.toLocaleString('id-ID')}
+                        </p>
+                      )}
+                      {banner.link && (
+                        <Link 
+                          href={banner.link}
+                          className="inline-block w-fit px-6 py-2 bg-white text-black font-semibold rounded-md hover:bg-gray-100 transition-colors"
+                        >
+                          Shop Now
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {activeBanners.length > 1 && (
+                <>
+                  <button 
+                    onClick={() => setCurrentBanner((prev) => (prev - 1 + activeBanners.length) % activeBanners.length)}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/20 backdrop-blur text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    ←
+                  </button>
+                  <button 
+                    onClick={() => setCurrentBanner((prev) => (prev + 1) % activeBanners.length)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/20 backdrop-blur text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    →
+                  </button>
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                    {activeBanners.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentBanner(i)}
+                        className={`w-2 h-2 rounded-full transition-colors ${i === currentBanner ? 'bg-white' : 'bg-white/40'}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Products ({filtered.length})</span>
           </div>

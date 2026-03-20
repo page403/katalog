@@ -19,13 +19,24 @@ interface Product {
   categoryId?: string | null;
 }
 
+interface Banner {
+  id: string;
+  title: string;
+  price: number;
+  image: string;
+  link?: string;
+  active: boolean;
+}
+
 interface AdminDashboardProps {
   initialProducts: Product[];
 }
 
 export default function AdminDashboard({ initialProducts }: AdminDashboardProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
   
   // Form State
   const [title, setTitle] = useState('');
@@ -44,13 +55,26 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
   const [newTagName, setNewTagName] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryId, setCategoryId] = useState<string | ''>('');
+
+  // Banner Form State
+  const [bannerTitle, setBannerTitle] = useState('');
+  const [bannerPrice, setBannerPrice] = useState('');
+  const [bannerImage, setBannerImage] = useState('');
+  const [bannerLink, setBannerLink] = useState('');
+  const [bannerActive, setBannerActive] = useState(true);
+  const [bannerMessage, setBannerMessage] = useState('');
   
   const router = useRouter();
 
   useEffect(() => {
     const loadMeta = async () => {
       try {
-        const [sRes, tRes, cRes] = await Promise.all([fetch('/api/suppliers'), fetch('/api/tags'), fetch('/api/categories')]);
+        const [sRes, tRes, cRes, bRes] = await Promise.all([
+          fetch('/api/suppliers'),
+          fetch('/api/tags'),
+          fetch('/api/categories'),
+          fetch('/api/banner')
+        ]);
         if (sRes.ok) {
           setSuppliers(await sRes.json());
         }
@@ -59,6 +83,9 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
         }
         if (cRes.ok) {
           setCategories(await cRes.json());
+        }
+        if (bRes.ok) {
+          setBanners(await bRes.json());
         }
       } catch {}
     };
@@ -79,6 +106,16 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
     setMessage('');
   };
 
+  const resetBannerForm = () => {
+    setBannerTitle('');
+    setBannerPrice('');
+    setBannerImage('');
+    setBannerLink('');
+    setBannerActive(true);
+    setEditingBannerId(null);
+    setBannerMessage('');
+  };
+
   const handleEditClick = (product: Product) => {
     setEditingId(product.id);
     setTitle(product.title);
@@ -91,6 +128,17 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
     setSelectedTagIds(product.tagIds || (product.tagId ? [product.tagId] : []));
     setCategoryId(product.categoryId || '');
     setMessage('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBannerEditClick = (banner: Banner) => {
+    setEditingBannerId(banner.id);
+    setBannerTitle(banner.title);
+    setBannerPrice(banner.price.toString());
+    setBannerImage(banner.image);
+    setBannerLink(banner.link || '');
+    setBannerActive(banner.active);
+    setBannerMessage('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -107,6 +155,25 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
         router.refresh();
       } else {
         alert('Failed to delete product');
+      }
+    } catch (err) {
+      alert('An error occurred');
+    }
+  };
+
+  const handleBannerDeleteClick = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this banner?')) return;
+
+    try {
+      const res = await fetch(`/api/banner?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setBanners(banners.filter(b => b.id !== id));
+        router.refresh();
+      } else {
+        alert('Failed to delete banner');
       }
     } catch (err) {
       alert('An error occurred');
@@ -157,6 +224,49 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
       }
     } catch (err) {
       setMessage('An error occurred');
+    }
+  };
+
+  const handleBannerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBannerMessage('');
+
+    const bannerData = {
+      title: bannerTitle,
+      price: bannerPrice,
+      image: bannerImage,
+      link: bannerLink,
+      active: bannerActive,
+      ...(editingBannerId && { id: editingBannerId }),
+    };
+
+    const method = editingBannerId ? 'PUT' : 'POST';
+
+    try {
+      const res = await fetch('/api/banner', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bannerData),
+      });
+
+      if (res.ok) {
+        const updatedBanner = await res.json();
+        
+        if (editingBannerId) {
+          setBanners(banners.map(b => b.id === editingBannerId ? updatedBanner : b));
+          setBannerMessage('Banner updated successfully!');
+        } else {
+          setBanners([...banners, updatedBanner]);
+          setBannerMessage('Banner added successfully!');
+        }
+        
+        resetBannerForm();
+        router.refresh();
+      } else {
+        setBannerMessage(`Failed to ${editingBannerId ? 'update' : 'add'} banner`);
+      }
+    } catch (err) {
+      setBannerMessage('An error occurred');
     }
   };
 
@@ -379,6 +489,149 @@ export default function AdminDashboard({ initialProducts }: AdminDashboardProps)
         </form>
       </div>
 
+      {/* Banner Management Section */}
+      <div className="bg-white p-6 rounded-lg shadow-md mb-10">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold">{editingBannerId ? 'Edit Banner' : 'Add New Banner'}</h2>
+          {editingBannerId && (
+            <button 
+              onClick={resetBannerForm}
+              className="text-gray-600 hover:text-gray-800 text-sm"
+            >
+              Cancel Edit
+            </button>
+          )}
+        </div>
+        
+        {bannerMessage && (
+          <p className={`mb-4 text-sm px-3 py-2 rounded ${bannerMessage.includes('success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            {bannerMessage}
+          </p>
+        )}
+
+        <form onSubmit={handleBannerSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="col-span-1">
+            <label className="block text-gray-700 mb-2">Banner Title</label>
+            <input
+              type="text"
+              value={bannerTitle}
+              onChange={(e) => setBannerTitle(e.target.value)}
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div className="col-span-1">
+            <label className="block text-gray-700 mb-2">Price (optional)</label>
+            <input
+              type="number"
+              value={bannerPrice}
+              onChange={(e) => setBannerPrice(e.target.value)}
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="col-span-1 md:col-span-2">
+            <label className="block text-gray-700 mb-2">Image URL</label>
+            <input
+              type="url"
+              value={bannerImage}
+              onChange={(e) => setBannerImage(e.target.value)}
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="https://example.com/banner.jpg"
+              required
+            />
+          </div>
+          <div className="col-span-1">
+            <label className="block text-gray-700 mb-2">Link (optional)</label>
+            <input
+              type="text"
+              value={bannerLink}
+              onChange={(e) => setBannerLink(e.target.value)}
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="/category/electronics or https://..."
+            />
+          </div>
+          <div className="col-span-1 flex items-center">
+            <label className="flex items-center text-gray-700 cursor-pointer mt-6">
+              <input
+                type="checkbox"
+                checked={bannerActive}
+                onChange={(e) => setBannerActive(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mr-2"
+              />
+              Active
+            </label>
+          </div>
+          <div className="col-span-1 md:col-span-2">
+            <button
+              className={`w-full px-4 py-2 rounded text-white ${editingBannerId ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+              type="submit"
+            >
+              {editingBannerId ? 'Update Banner' : 'Add Banner'}
+            </button>
+          </div>
+        </form>
+
+        {banners.length > 0 && (
+          <div className="mt-8 border-t pt-6">
+            <h3 className="text-lg font-bold mb-4">Current Banners</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {banners.map((banner) => (
+                    <tr key={banner.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="relative h-10 w-20 bg-gray-100 rounded overflow-hidden">
+                          <Image
+                            src={banner.image}
+                            alt={banner.title}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{banner.title}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {banner.price ? `Rp. ${banner.price.toLocaleString('id-ID')}` : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${banner.active ? 'bg-green-50 text-green-700 ring-green-200' : 'bg-gray-50 text-gray-700 ring-gray-200'}`}>
+                          {banner.active ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button 
+                          onClick={() => handleBannerEditClick(banner)}
+                          className="text-indigo-600 hover:text-indigo-900 mr-4"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleBannerDeleteClick(banner.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Manage Suppliers, Tags, Categories */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-10">
         <h2 className="text-xl font-bold mb-4">Manage Suppliers, Tags, Categories</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
