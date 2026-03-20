@@ -210,7 +210,9 @@ export default function CatalogPage({
   return (
     <div className="min-h-screen pb-40">
       <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-end py-1 px-4 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
-        <div className="flex items-center gap-3">
+        
+        <div className="flex items-center justify-between w-full">
+          <div className="text-lg font-bold">Lumbung Pangan Semesta</div>
           <Link href="/cart" className="relative p-2 rounded-md hover:bg-gray-100">
             🛒
             {cartCount > 0 && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-red-600 rounded-full" />}
@@ -481,7 +483,7 @@ export default function CatalogPage({
       <button
         aria-label="Back to top"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-40 right-4 p-3 rounded-full bg-gray-800 text-white shadow hover:bg-gray-900"
+        className="fixed bottom-30 right-4 p-3 rounded-full bg-gray-800 text-white shadow hover:bg-gray-900"
       >
         ↑
       </button>
