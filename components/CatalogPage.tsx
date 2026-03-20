@@ -212,7 +212,7 @@ export default function CatalogPage({
       <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-end py-1 px-4 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
         
         <div className="flex items-center justify-between w-full">
-          <div className="text-lg font-bold">Lumbung Pangan Semesta</div>
+          <div className="text-lg font-bold">Eid Mubarak 1447 H </div>
           <Link href="/cart" className="relative p-2 rounded-md hover:bg-gray-100">
             🛒
             {cartCount > 0 && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-red-600 rounded-full" />}
