@@ -37,10 +37,9 @@ export default function CatalogPage({
   const [sortKey, setSortKey] = useState<
     'relevance' | 'price_asc' | 'price_desc' | 'title_asc' | 'category_asc' | 'brand_asc'
   >('relevance');
-  const [filtersOpen, setFiltersOpen] = useState(() => {
-    if (typeof window === 'undefined') return true; // SSR fallback
-    return window.matchMedia('(min-width: 768px)').matches;
-  });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
   const maxPrice = useMemo(() => Math.max(0, ...published.map((p) => p.price)), [published]);
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPriceFilter, setMaxPriceFilter] = useState<number>(maxPrice);
@@ -93,6 +92,23 @@ export default function CatalogPage({
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)');
+    const sync = () => setFiltersOpen(mql.matches);
+    sync();
+
+    // Keep desktop/mobile panel behavior consistent on resize.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anyMql = mql as any;
+    if (anyMql.addEventListener) {
+      anyMql.addEventListener('change', sync);
+      return () => anyMql.removeEventListener('change', sync);
+    }
+    // Safari fallback
+    anyMql.addListener(sync);
+    return () => anyMql.removeListener(sync);
   }, []);
 
   const catCounts = useMemo(() => {
@@ -192,7 +208,7 @@ export default function CatalogPage({
   ]);
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-screen pb-40">
       <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-end py-1 px-4 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
         <div className="flex items-center gap-3">
           <Link href="/cart" className="relative p-2 rounded-md hover:bg-gray-100">
@@ -203,13 +219,22 @@ export default function CatalogPage({
       </header>
 
       <div
+        className={`${filtersOpen ? 'block' : 'hidden'} md:hidden fixed inset-0 bg-black/20 z-20`}
+        onClick={() => {
+          setFiltersOpen(false);
+          setSearchOpen(false);
+          setSortOpen(false);
+        }}
+      />
+
+      <div
         className={`grid grid-cols-1 gap-6 mt-12 md:mt-16 ${
           filtersOpen ? 'md:grid-cols-[280px_1fr]' : 'md:grid-cols-[1fr]'
         }`}
       >
         <aside
           id="filters-panel"
-          className={`${filtersOpen ? 'block' : 'hidden'} bg-white rounded-xl p-4 ring-1 ring-gray-200`}
+          className={`${filtersOpen ? 'block' : 'hidden'} bg-white rounded-xl p-4 ring-1 ring-gray-200 fixed left-0 right-0 top-12 bottom-40 overflow-auto z-30 md:static md:left-auto md:right-auto md:top-auto md:bottom-auto md:overflow-visible`}
         >
           <div className="flex items-center justify-between mb-3">
             <span className="font-semibold">Filters</span>
@@ -354,8 +379,8 @@ export default function CatalogPage({
       {/* Sticky bottom controls */}
       <div className="fixed bottom-0 inset-x-0 z-40 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-t border-gray-200">
         <div className="px-4 py-3">
-          <div className="flex items-center gap-3 flex-wrap justify-center">
-            <div className="relative w-full max-w-xs">
+          <div className="flex flex-row gap-2 md:flex-row md:items-center md:justify-center md:gap-3">
+            <div className="relative w-full max-w-xs hidden md:block">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
               <input
                 aria-label="Search products"
@@ -365,19 +390,49 @@ export default function CatalogPage({
                 className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black/20"
               />
             </div>
+
+            <button
+              className="md:hidden p-2 rounded-md border border-gray-200 hover:bg-gray-50 flex items-center justify-center"
+              onClick={() => {
+                setSearchOpen((v) => !v);
+                setSortOpen(false);
+              }}
+              aria-label={searchOpen ? 'Close search' : 'Open search'}
+              aria-expanded={searchOpen}
+            >
+              🔍
+            </button>
+
             <button
               className="p-2 rounded-md border border-gray-200 hover:bg-gray-50 flex items-center gap-2"
-              onClick={() => setFiltersOpen((v) => !v)}
+              onClick={() => {
+                setFiltersOpen((v) => !v);
+                setSearchOpen(false);
+                setSortOpen(false);
+              }}
               aria-controls="filters-panel"
               aria-expanded={filtersOpen}
             >
               <span aria-hidden>🗂️</span>
-              <span className="text-sm font-medium">{filtersOpen ? 'Hide' : 'Filters'}</span>
+              <span className="hidden sm:inline text-sm font-medium">{filtersOpen ? 'Hide' : 'Filters'}</span>
             </button>
+
+            <button
+              className="md:hidden p-2 rounded-md border border-gray-200 hover:bg-gray-50 flex items-center justify-center"
+              onClick={() => {
+                setSortOpen((v) => !v);
+                setSearchOpen(false);
+              }}
+              aria-label={sortOpen ? 'Close sort' : 'Open sort'}
+              aria-expanded={sortOpen}
+            >
+              ↕️
+            </button>
+
             <select
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
-              className="px-3 py-2 rounded-md border border-gray-300 text-sm"
+              className="hidden md:block px-3 py-2 rounded-md border border-gray-300 text-sm"
             >
               <option value="relevance">Relevance</option>
               <option value="price_asc">Price: Low to High</option>
@@ -387,13 +442,46 @@ export default function CatalogPage({
               <option value="brand_asc">Brand: A–Z</option>
             </select>
           </div>
+
+          {searchOpen && (
+            <div className="md:hidden relative mt-2">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+              <input
+                aria-label="Search products"
+                placeholder="Search products..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black/20"
+              />
+            </div>
+          )}
+
+          {sortOpen && (
+            <div className="md:hidden mt-2">
+              <select
+                value={sortKey}
+                onChange={(e) => {
+                  setSortKey(e.target.value as typeof sortKey);
+                  setSortOpen(false);
+                }}
+                className="w-full px-3 py-2 rounded-md border border-gray-300 text-sm"
+              >
+                <option value="relevance">Relevance</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="title_asc">Title: A–Z</option>
+                <option value="category_asc">Category: A–Z</option>
+                <option value="brand_asc">Brand: A–Z</option>
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
       <button
         aria-label="Back to top"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-24 right-4 p-3 rounded-full bg-gray-800 text-white shadow hover:bg-gray-900"
+        className="fixed bottom-40 right-4 p-3 rounded-full bg-gray-800 text-white shadow hover:bg-gray-900"
       >
         ↑
       </button>
