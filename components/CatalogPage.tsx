@@ -34,11 +34,27 @@ export default function CatalogPage({
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [sortKey, setSortKey] = useState<'relevance' | 'price_asc' | 'price_desc' | 'title_asc'>('relevance');
+  const [sortKey, setSortKey] = useState<
+    'relevance' | 'price_asc' | 'price_desc' | 'title_asc' | 'category_asc' | 'brand_asc'
+  >('relevance');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const maxPrice = useMemo(() => Math.max(0, ...published.map((p) => p.price)), [published]);
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPriceFilter, setMaxPriceFilter] = useState<number>(maxPrice);
   const [cartCount, setCartCount] = useState<number>(0);
+
+  const categoryNameById = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const c of categories) m[c.id] = c.name;
+    return m;
+  }, [categories]);
+
+  const supplierNameById = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const s of suppliers) m[s.id] = s.name;
+    return m;
+  }, [suppliers]);
+
   const addToCart = (p: Product) => {
     try {
       const raw = typeof window !== 'undefined' ? window.localStorage.getItem('cart') : null;
@@ -140,12 +156,37 @@ export default function CatalogPage({
       case 'title_asc':
         list.sort((a, b) => a.title.localeCompare(b.title));
         break;
+      case 'category_asc':
+        list.sort((a, b) =>
+          (categoryNameById[a.categoryId || ''] || '').localeCompare(
+            categoryNameById[b.categoryId || ''] || ''
+          )
+        );
+        break;
+      case 'brand_asc':
+        list.sort((a, b) =>
+          (supplierNameById[a.supplierId || ''] || '').localeCompare(
+            supplierNameById[b.supplierId || ''] || ''
+          )
+        );
+        break;
       case 'relevance':
       default:
         break;
     }
     return list;
-  }, [published, query, selectedCats, selectedBrands, selectedTags, minPrice, maxPriceFilter, sortKey]);
+  }, [
+    published,
+    query,
+    selectedCats,
+    selectedBrands,
+    selectedTags,
+    minPrice,
+    maxPriceFilter,
+    sortKey,
+    categoryNameById,
+    supplierNameById,
+  ]);
 
   return (
     <div className="min-h-screen">
@@ -159,7 +200,10 @@ export default function CatalogPage({
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 mt-12 md:mt-16">
-        <aside className="bg-white rounded-xl p-4 ring-1 ring-gray-200">
+        <aside
+          id="filters-panel"
+          className={`${filtersOpen ? 'block' : 'hidden'} md:block bg-white rounded-xl p-4 ring-1 ring-gray-200`}
+        >
           <div className="flex items-center justify-between mb-3">
             <span className="font-semibold">Filters</span>
             <button
@@ -264,7 +308,15 @@ export default function CatalogPage({
                   className="w-full pl-9 pr-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black/20"
                 />
               </div>
-              <button className="p-2 rounded-md border border-gray-200 hover:bg-gray-50">🗂️</button>
+              <button
+                className="md:hidden p-2 rounded-md border border-gray-200 hover:bg-gray-50 flex items-center gap-2"
+                onClick={() => setFiltersOpen((v) => !v)}
+                aria-controls="filters-panel"
+                aria-expanded={filtersOpen}
+              >
+                <span aria-hidden>🗂️</span>
+                <span className="text-sm font-medium">{filtersOpen ? 'Hide' : 'Filters'}</span>
+              </button>
               <select
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
@@ -274,6 +326,8 @@ export default function CatalogPage({
                 <option value="price_asc">Price: Low to High</option>
                 <option value="price_desc">Price: High to Low</option>
                 <option value="title_asc">Title: A–Z</option>
+                <option value="category_asc">Category: A–Z</option>
+                <option value="brand_asc">Brand: A–Z</option>
               </select>
             </div>
             <span className="text-sm text-gray-600">Products ({filtered.length})</span>
