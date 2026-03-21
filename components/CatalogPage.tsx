@@ -373,7 +373,13 @@ export default function CatalogPage({
                     {activeBanners.map((banner) => (
                       <div key={banner.id} className="relative min-w-full h-full flex flex-col md:flex-row bg-gray-50">
                         {/* Banner Image */}
-                        <div className="relative w-full md:w-1/2 aspect-[4/3] md:aspect-auto md:h-full bg-white">
+                        {banner.link && (
+                            <Link 
+                              href={banner.link.startsWith('http') ? banner.link : `https://${banner.link}`}
+                              className="inline-block w-fit px-5 md:px-6 py-2 md:py-2.5 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors text-xs md:text-sm"
+                            >
+                              Check Details
+                              <div className="relative w-full md:w-1/2 aspect-[4/3] md:aspect-auto md:h-full bg-white">
                           <Image
                             src={banner.image}
                             alt={banner.title}
@@ -391,15 +397,11 @@ export default function CatalogPage({
                               Rp. {banner.price.toLocaleString('id-ID')}
                             </p>
                           )}
-                          {banner.link && (
-                            <Link 
-                              href={banner.link.startsWith('http') ? banner.link : `https://${banner.link}`}
-                              className="inline-block w-fit px-5 md:px-6 py-2 md:py-2.5 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors text-xs md:text-sm"
-                            >
-                              Check Details
+                          
+                        </div>
                             </Link>
                           )}
-                        </div>
+                        
                       </div>
                     ))}
                   </div>
