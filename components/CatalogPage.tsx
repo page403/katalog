@@ -365,20 +365,20 @@ export default function CatalogPage({
                 ✕
               </button>
 
-              <div className="relative w-full h-[450px] md:h-64 group">
+              <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                   <div 
                     className="flex transition-transform duration-700 ease-in-out h-full"
                     style={{ transform: `translateX(-${currentBanner * 100}%)` }}
                   >
                     {activeBanners.map((banner) => (
-                      <div key={banner.id} className="relative min-w-full h-full flex flex-col md:flex-row bg-gray-50">
+                      <div key={banner.id} className="relative min-w-full h-full flex flex-col md:flex-row">
                         {/* Banner Image */}
                         {banner.link && (
                             <Link 
                               href={banner.link.startsWith('http') ? banner.link : `https://${banner.link}`}
-                              className="inline-block w-fit px-5 md:px-6 py-2 md:py-2.5 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors text-xs md:text-sm"
+                              className="inline-block w-fit text-white font-semibold rounded-lg transition-colors text-xs md:text-sm"
                             >
-                              Check Details
+                              {/* Check Details */}
                               <div className="relative w-full md:w-1/2 aspect-[4/3] md:aspect-auto md:h-full bg-white">
                           <Image
                             src={banner.image}
@@ -387,7 +387,10 @@ export default function CatalogPage({
                             className="object-cover"
                             unoptimized
                           />
+                          
                         </div>
+                        </Link>
+                          )}
                         
                         {/* Banner Content */}
                         <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-center bg-gray-50 md:h-full">
@@ -399,8 +402,7 @@ export default function CatalogPage({
                           )}
                           
                         </div>
-                            </Link>
-                          )}
+                            
                         
                       </div>
                     ))}
@@ -410,13 +412,13 @@ export default function CatalogPage({
                   <>
                     <button 
                       onClick={() => setCurrentBanner((prev) => (prev - 1 + activeBanners.length) % activeBanners.length)}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/40 backdrop-blur-sm text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/60"
+                      className="absolute bg-black text-white left-2 top-1/2 -translate-y-1/2 p-2 rounded-full group-hover:opacity-100 transition-opacity hover:bg-white/60"
                     >
                       ←
                     </button>
                     <button 
                       onClick={() => setCurrentBanner((prev) => (prev + 1) % activeBanners.length)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/40 backdrop-blur-sm text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/60"
+                      className="absolute bg-black text-white right-2 top-1/2 -translate-y-1/2 p-2 rounded-full group-hover:opacity-100 transition-opacity hover:bg-white/60"
                     >
                       →
                     </button>
