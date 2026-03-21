@@ -365,45 +365,44 @@ export default function CatalogPage({
                 ✕
               </button>
 
-              <div className="relative w-full h-48 md:h-64 group">
-                <div 
-                  className="flex transition-transform duration-700 ease-in-out h-full"
-                  style={{ transform: `translateX(-${currentBanner * 100}%)` }}
-                >
-                  {activeBanners.map((banner) => (
-                    <div key={banner.id} className="relative min-w-full h-full flex flex-col md:flex-row bg-gray-50">
-                      {/* Banner Image */}
-                      <div className="relative w-full md:w-1/2 h-full">
-                        <Image
-                          src={banner.image}
-                          alt={banner.title}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                      </div>
-                      
-                      {/* Banner Content */}
-                      <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-center bg-gray-50">
-                        <span className="text-xs font-bold tracking-widest text-blue-600 uppercase mb-2">Featured Offer</span>
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{banner.title}</h2>
-                        {banner.price > 0 && (
-                          <p className="text-xl font-semibold text-green-600 mb-4">
-                            Rp. {banner.price.toLocaleString('id-ID')}
-                          </p>
-                        )}
-                        {banner.link && (
-                          <Link 
-                            href={banner.link.startsWith('http') ? banner.link : `https://${banner.link}`}
-                            className="inline-block w-fit px-6 py-2.5 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors text-sm"
-                          >
-                            Check Details
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div className="relative w-full h-80 md:h-64 group">
+                 <div 
+                   className="flex transition-transform duration-700 ease-in-out h-full"
+                   style={{ transform: `translateX(-${currentBanner * 100}%)` }}
+                 >
+                   {activeBanners.map((banner) => (
+                     <div key={banner.id} className="relative min-w-full h-full flex flex-col md:flex-row bg-gray-50">
+                       {/* Banner Image */}
+                       <div className="relative w-full md:w-1/2 h-40 md:h-full">
+                         <Image
+                           src={banner.image}
+                           alt={banner.title}
+                           fill
+                           className="object-cover"
+                           unoptimized
+                         />
+                       </div>
+                       
+                       {/* Banner Content */}
+                       <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-center bg-gray-50 h-40 md:h-full">
+                         <span className="text-xs md:text-sm font-bold tracking-widest text-blue-600 uppercase mb-1 md:mb-2">{banner.title}</span>
+                         {banner.price > 0 && (
+                           <p className="text-lg md:text-xl font-semibold text-green-600 mb-3 md:mb-4">
+                             Rp. {banner.price.toLocaleString('id-ID')}
+                           </p>
+                         )}
+                         {banner.link && (
+                           <Link 
+                             href={banner.link.startsWith('http') ? banner.link : `https://${banner.link}`}
+                             className="inline-block w-fit px-5 md:px-6 py-2 md:py-2.5 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors text-xs md:text-sm"
+                           >
+                             Check Details
+                           </Link>
+                         )}
+                       </div>
+                     </div>
+                   ))}
+                 </div>
 
                 {activeBanners.length > 1 && (
                   <>
