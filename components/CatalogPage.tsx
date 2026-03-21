@@ -418,7 +418,7 @@ export default function CatalogPage({
                     </button>
                     <button 
                       onClick={() => setCurrentBanner((prev) => (prev + 1) % activeBanners.length)}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-gray-800 text-white shadow hover:bg-gray-900"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-gray-800 text-white shadow hover:bg-gray-900"
                     >
                       →
                     </button>
