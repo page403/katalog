@@ -590,7 +590,7 @@ export default function CatalogPage({
       <button
         aria-label="Back to top"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-30 right-4 p-3 rounded-full bg-gray-800 text-white shadow hover:bg-gray-900"
+        className="fixed bottom-20 right-4 p-3 rounded-full bg-gray-800 text-white shadow hover:bg-gray-900"
       >
         ↑
       </button>
