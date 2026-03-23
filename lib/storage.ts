@@ -78,6 +78,7 @@ async function writeFsProducts(products: Product[]) {
 export interface Supplier {
   id: string;
   name: string;
+  logo?: string;
 }
 
 export interface Tag {
@@ -195,7 +196,8 @@ async function ensureTable() {
   await sql`
     CREATE TABLE IF NOT EXISTS suppliers (
       id TEXT PRIMARY KEY,
-      name TEXT UNIQUE NOT NULL
+      name TEXT UNIQUE NOT NULL,
+      logo TEXT
     )
   `;
   await sql`
@@ -436,7 +438,7 @@ export async function getSuppliers(): Promise<Supplier[]> {
   if (useDb && sql) {
     await ensureTable();
     const rows = await sql`
-      SELECT id, name FROM suppliers ORDER BY name
+      SELECT id, name, logo FROM suppliers ORDER BY name
     ` as unknown as Supplier[];
     return rows;
   } else if (useKv) {
@@ -446,30 +448,76 @@ export async function getSuppliers(): Promise<Supplier[]> {
   return readFsSuppliers();
 }
 
-export async function addSupplier(name: string): Promise<Supplier> {
+export async function addSupplier(name: string, logo?: string): Promise<Supplier> {
   if (vercelWithoutStorage) {
     throw new Error('Storage not configured on Vercel. Set Neon Postgres or Vercel KV environment variables.');
   }
-  const supplier: Supplier = { id: Date.now().toString(), name };
+  const supplier: Supplier = { id: Date.now().toString(), name, logo };
   if (useDb && sql) {
     await ensureTable();
     await sql`
-      INSERT INTO suppliers (id, name) VALUES (${supplier.id}, ${supplier.name})
-      ON CONFLICT (name) DO NOTHING
+      INSERT INTO suppliers (id, name, logo) VALUES (${supplier.id}, ${supplier.name}, ${supplier.logo})
+      ON CONFLICT (name) DO UPDATE SET logo = EXCLUDED.logo
     `;
     return supplier;
   } else if (useKv) {
     const list = await getSuppliers();
     const exists = list.find((s) => s.name.toLowerCase() === name.toLowerCase());
-    const updated = exists ? list : [...list, supplier];
+    const updated = exists ? list.map(s => s.name.toLowerCase() === name.toLowerCase() ? { ...s, logo } : s) : [...list, supplier];
     await kv.set(KV_SUPPLIERS_KEY, updated);
     return supplier;
   } else {
     const list = await getSuppliers();
     const exists = list.find((s) => s.name.toLowerCase() === name.toLowerCase());
-    const updated = exists ? list : [...list, supplier];
+    const updated = exists ? list.map(s => s.name.toLowerCase() === name.toLowerCase() ? { ...s, logo } : s) : [...list, supplier];
     await writeFsSuppliers(updated);
     return supplier;
+  }
+}
+
+export async function updateSupplier(input: Supplier): Promise<Supplier> {
+  if (vercelWithoutStorage) {
+    throw new Error('Storage not configured on Vercel. Set Neon Postgres or Vercel KV environment variables.');
+  }
+  if (useDb && sql) {
+    await ensureTable();
+    await sql`
+      UPDATE suppliers
+      SET name = ${input.name}, logo = ${input.logo}
+      WHERE id = ${input.id}
+    `;
+  } else if (useKv) {
+    const list = await getSuppliers();
+    const updated = list.map(s => s.id === input.id ? input : s);
+    await kv.set(KV_SUPPLIERS_KEY, updated);
+  } else {
+    const list = await getSuppliers();
+    const updated = list.map(s => s.id === input.id ? input : s);
+    await writeFsSuppliers(updated);
+  }
+  return input;
+}
+
+export async function deleteSupplier(id: string): Promise<boolean> {
+  if (vercelWithoutStorage) {
+    throw new Error('Storage not configured on Vercel. Set Neon Postgres or Vercel KV environment variables.');
+  }
+  if (useDb && sql) {
+    await ensureTable();
+    await sql`DELETE FROM suppliers WHERE id = ${id}`;
+    return true;
+  } else if (useKv) {
+    const list = await getSuppliers();
+    const filtered = list.filter(s => s.id !== id);
+    if (filtered.length === list.length) return false;
+    await kv.set(KV_SUPPLIERS_KEY, filtered);
+    return true;
+  } else {
+    const list = await getSuppliers();
+    const filtered = list.filter(s => s.id !== id);
+    if (filtered.length === list.length) return false;
+    await writeFsSuppliers(filtered);
+    return true;
   }
 }
 
